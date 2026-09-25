@@ -1,0 +1,169 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { setActivePinia, createPinia } from 'pinia';
+import { usePantryStore } from '~~/app/stores/pantry';
+import type { PantryItem } from '~~/shared/types';
+
+describe('Pinia Pantry Store', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  it('initializes with default state', () => {
+    const store = usePantryStore();
+    expect(store.items).toEqual([]);
+    expect(store.activeTab).toBe('shopping');
+    expect(store.searchQuery).toBe('');
+    expect(store.selectedCategory).toBe('All');
+    expect(store.stockFilter).toBe('all');
+    expect(store.shoppingList).toEqual([]);
+    expect(store.suggestions).toEqual([]);
+  });
+
+  it('computes shoppingList and stock counts correctly', () => {
+    const store = usePantryStore();
+
+    const item1: PantryItem = {
+      id: '1',
+      name: 'Oat Milk',
+      category: 'Dairy & Eggs',
+      inStock: true,
+      quantity: 2,
+      unit: 'cartons',
+      frequencyDays: 7,
+      frequencyLabel: 'Weekly (7d)',
+      lastPurchasedAt: null,
+      nextDueDate: null,
+      inShoppingList: true,
+      shoppingListQuantity: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const item2: PantryItem = {
+      id: '2',
+      name: 'Apples',
+      category: 'Produce',
+      inStock: false,
+      quantity: 0,
+      unit: 'bag',
+      frequencyDays: 5,
+      frequencyLabel: 'Every 5 days',
+      lastPurchasedAt: null,
+      nextDueDate: null,
+      inShoppingList: false,
+      shoppingListQuantity: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    store.items = [item1, item2];
+
+    expect(store.totalCount).toBe(2);
+    expect(store.inStockCount).toBe(1);
+    expect(store.outOfStockCount).toBe(1);
+    expect(store.shoppingList.length).toBe(1);
+    expect(store.shoppingList[0].id).toBe('1');
+    // Since item2 is out of stock, it should generate a suggestion
+    expect(store.suggestions.length).toBe(1);
+    expect(store.suggestions[0].item.id).toBe('2');
+  });
+
+  it('filters items properly based on search query, category, and status', () => {
+    const store = usePantryStore();
+
+    store.items = [
+      {
+        id: '1',
+        name: 'Whole Grain Sourdough',
+        category: 'Bakery',
+        inStock: true,
+        quantity: 1,
+        unit: 'loaf',
+        frequencyDays: 7,
+        frequencyLabel: 'Weekly',
+        lastPurchasedAt: null,
+        nextDueDate: null,
+        inShoppingList: false,
+        shoppingListQuantity: 1,
+        notes: 'Rustic loaf',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: '2',
+        name: 'Whole Milk',
+        category: 'Dairy & Eggs',
+        inStock: false,
+        quantity: 0,
+        unit: 'bottle',
+        frequencyDays: 7,
+        frequencyLabel: 'Weekly',
+        lastPurchasedAt: null,
+        nextDueDate: null,
+        inShoppingList: false,
+        shoppingListQuantity: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+
+    // Filter by search query
+    store.searchQuery = 'sourdough';
+    expect(store.filteredItems.length).toBe(1);
+    expect(store.filteredItems[0].name).toBe('Whole Grain Sourdough');
+
+    // Filter by category
+    store.searchQuery = '';
+    store.selectedCategory = 'Dairy & Eggs';
+    expect(store.filteredItems.length).toBe(1);
+    expect(store.filteredItems[0].name).toBe('Whole Milk');
+
+    // Filter by stock status
+    store.selectedCategory = 'All';
+    store.stockFilter = 'out-of-stock';
+    expect(store.filteredItems.length).toBe(1);
+    expect(store.filteredItems[0].name).toBe('Whole Milk');
+
+    store.stockFilter = 'in-stock';
+    expect(store.filteredItems.length).toBe(1);
+    expect(store.filteredItems[0].name).toBe('Whole Grain Sourdough');
+  });
+
+  it('handles modal controls correctly', () => {
+    const store = usePantryStore();
+
+    store.openAddItemModal();
+    expect(store.isItemModalOpen).toBe(true);
+    expect(store.editingItem).toBeNull();
+
+    const mockItem: PantryItem = {
+      id: 'item-123',
+      name: 'Honey',
+      category: 'Pantry Staples',
+      inStock: true,
+      quantity: 1,
+      unit: 'jar',
+      frequencyDays: 30,
+      frequencyLabel: 'Monthly',
+      lastPurchasedAt: null,
+      nextDueDate: null,
+      inShoppingList: false,
+      shoppingListQuantity: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    store.openEditItemModal(mockItem);
+    expect(store.isItemModalOpen).toBe(true);
+    expect(store.editingItem?.id).toBe('item-123');
+
+    store.closeItemModal();
+    expect(store.isItemModalOpen).toBe(false);
+    expect(store.editingItem).toBeNull();
+
+    store.openDataModal();
+    expect(store.isDataModalOpen).toBe(true);
+    store.closeDataModal();
+    expect(store.isDataModalOpen).toBe(false);
+  });
+});

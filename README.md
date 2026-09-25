@@ -16,15 +16,17 @@ Personal Shopper helps households track pantry staples, monitor stock levels, an
   - Remove items without altering pantry stock history if you decide not to purchase them.
 - **Full Pantry Management**: Categorize items, record custom units, specify quantities, and append item notes.
 - **Data Backup & Restore**: Export and import your pantry inventory as JSON, or reset to realistic sample items.
-- **Mobile & LAN Ready**: Configured for local network access so you can manage your pantry directly from your smartphone on the same Wi-Fi network.
+- **Mobile & LAN Ready**: Single Page Application (SPA mode) configured for local network Wi-Fi access and prepared for targeting into Capacitor for native mobile apps.
 
 ---
 
 ## Tech Stack
 
-- **Frontend**: [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/), [Tailwind CSS v4](https://tailwindcss.com/), [Vite](https://vitejs.dev/), [Lucide React](https://lucide.dev/), [Canvas Confetti](https://github.com/catdad/canvas-confetti)
-- **Backend**: [Node.js](https://nodejs.org/), [Express 5](https://expressjs.com/), [tsx](https://github.com/privatenumber/tsx), [CORS](https://github.com/expressjs/cors)
-- **Database**: Local JSON flat-file storage (`data/pantry_db.json`) with atomic persistence
+- **Framework**: [Nuxt 4.5.1](https://nuxt.com/) (configured in SPA mode with Nitro engine)
+- **UI & Design**: [Nuxt UI 4.11.2](https://ui.nuxt.com/), [Tailwind CSS v4](https://tailwindcss.com/), [Canvas Confetti](https://github.com/catdad/canvas-confetti)
+- **State Management**: [Pinia](https://pinia.vuejs.org/) via `@pinia/nuxt`
+- **Data Layer**: Clean Repository Pattern (`PantryRepository`), flat-file storage (`data/pantry_db.json`) with atomic persistence, prepared for database migration (SQLite/PostgreSQL)
+- **Testing**: [Vitest](https://vitest.dev/) & [@nuxt/test-utils](https://nuxt.com/docs/getting-started/testing) with in-memory test datastore isolation
 
 ---
 
@@ -32,25 +34,23 @@ Personal Shopper helps households track pantry staples, monitor stock levels, an
 
 ```text
 PersonalShopper/
+├── app/                   # Nuxt 4 frontend application
+│   ├── assets/css/        # Tailwind v4 and Nuxt UI styling
+│   ├── components/        # Nuxt UI components (Pantry, Shopping List, Modals, Navbar)
+│   ├── stores/            # Pinia state management (usePantryStore)
+│   ├── utils/             # Cadence algorithms, audio synthesizer, confetti, formatting
+│   └── app.vue            # Root UApp wrapper and view orchestration
 ├── data/                  # Local JSON data store (pantry_db.json)
 ├── public/                # Static assets, icons, and web manifest
-├── server/                # Express API & business logic
-│   ├── cadence.ts         # Replenishment calculation & urgency algorithms
-│   ├── db.ts              # JSON database persistence & CRUD helpers
-│   ├── index.ts           # Express server endpoints & static asset serving
-│   ├── tests/             # Automated verification test suite
-│   └── types.ts           # Backend TypeScript models
-├── src/                   # React frontend application
-│   ├── components/        # UI components (Pantry, Shopping List, Modals, Navbar)
-│   ├── utils/             # Helper utilities
-│   ├── api.ts             # Client API service
-│   ├── App.tsx            # Main layout and application state
-│   ├── main.tsx           # React DOM bootstrap
-│   └── types.ts           # Frontend TypeScript types
-├── index.html             # HTML entry point with mobile viewport settings
+├── server/                # Nitro server engine
+│   ├── api/               # REST API endpoints (/api/pantry, /api/shopping-list, /api/data)
+│   └── utils/             # Repository abstraction (JsonFilePantryRepository, InMemoryPantryRepository)
+├── shared/                # Shared TypeScript models and DTO interfaces
+├── test/                  # Automated Vitest test suite with datastore isolation
+├── nuxt.config.ts         # Nuxt 4 configuration (SPA mode, Nuxt UI, Pinia)
 ├── package.json           # Dependencies and project scripts
 ├── tsconfig.json          # TypeScript compiler configuration
-└── vite.config.ts         # Vite build and proxy configuration
+└── vitest.config.ts       # Vitest configuration for Nuxt runtime environment
 ```
 
 ---
@@ -74,40 +74,32 @@ npm install
 
 ### Development Mode
 
-Run both the backend API and frontend Vite client simultaneously:
+Start the Nuxt 4 development server:
 
 ```bash
 npm run dev
 ```
 
-- **Client**: `http://localhost:5173` (also accessible over your local Wi-Fi via your machine's LAN IP)
-- **Server API**: `http://localhost:3001` (proxied by Vite)
+- Accessible at: `http://localhost:3000`
 
-You can also run client or server independently:
+### Running Automated Tests
 
-```bash
-npm run dev:server   # Starts Express API with file-watching via tsx
-npm run dev:client   # Starts Vite development server
-```
-
-### Running Tests
-
-Run the backend cadence and schedule calculation test suite:
+Run the isolated test suite verifying cadence math, repository operations, and Pinia store state transitions:
 
 ```bash
 npm test
 ```
 
-### Production Build & Launch
+> **Note**: Automated tests run against an in-memory repository instance, ensuring zero mutation occurs to your production `data/pantry_db.json` store.
 
-To build the client bundle and start the production Express server:
+### Production Build & Preview
+
+To build the client bundle and preview the application:
 
 ```bash
 npm run build
-npm start
+npm run preview
 ```
-
-The Express server will serve both the `/api/*` endpoints and the compiled static frontend from `dist/` on port `3001`.
 
 ---
 
