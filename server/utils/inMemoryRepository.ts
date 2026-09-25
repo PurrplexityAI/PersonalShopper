@@ -104,11 +104,10 @@ export class InMemoryPantryRepository implements PantryRepository {
 
   async update(id: string, updates: UpdatePantryItemDto): Promise<PantryItem> {
     const index = this.items.findIndex((item) => item.id === id);
-    if (index === -1) {
+    const current = this.items[index];
+    if (index === -1 || !current) {
       throw new Error(`Item with id "${id}" not found`);
     }
-
-    const current = this.items[index];
 
     if (updates.name && updates.name.trim()) {
       const trimmed = updates.name.trim();
@@ -127,6 +126,7 @@ export class InMemoryPantryRepository implements PantryRepository {
     const updatedItem: PantryItem = {
       ...current,
       ...updates,
+      id: current.id,
       frequencyDays,
       frequencyLabel,
       lastPurchasedAt,
@@ -184,12 +184,10 @@ export class InMemoryPantryRepository implements PantryRepository {
     }
 
     const now = new Date().toISOString();
-    const nextDueDate = calculateNextDueDate(now, item.frequencyDays);
 
     return this.update(id, {
       inStock: true,
       lastPurchasedAt: now,
-      nextDueDate,
       inShoppingList: false,
       quantity: item.shoppingListQuantity > 0 ? item.shoppingListQuantity : 1,
     });

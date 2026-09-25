@@ -206,10 +206,10 @@ export const usePantryStore = defineStore('pantry', {
     async savePantryItem(data: CreatePantryItemDto) {
       try {
         if (this.editingItem) {
-          await $fetch(`/api/pantry/${this.editingItem.id}`, {
+          await $fetch('/api/pantry/' + this.editingItem.id, {
             method: 'PUT',
             body: data,
-          });
+          },);
           this.notify(`Updated "${data.name || this.editingItem.name}"`, undefined, 'success');
         } else {
           await $fetch('/api/pantry', {
@@ -231,7 +231,7 @@ export const usePantryStore = defineStore('pantry', {
         return;
       }
       try {
-        await $fetch(`/api/pantry/${item.id}`, {
+        await $fetch('/api/pantry/' + item.id, {
           method: 'DELETE',
         });
         this.notify(`Deleted "${item.name}" from pantry`, undefined, 'info');
