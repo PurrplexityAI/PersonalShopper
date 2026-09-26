@@ -12,6 +12,14 @@ const newCadence = ref(7);
 const newCategory = ref("General");
 const showNewItemPrompt = ref(false);
 
+const CADENCE_OPTIONS = [
+  { label: "Every 3 days", value: 3 },
+  { label: "Weekly (7d)", value: 7 },
+  { label: "Every 2 weeks (14d)", value: 14 },
+  { label: "Every 3 weeks", value: 21 },
+  { label: "Monthly (30d)", value: 30 },
+];
+
 const trimmedInput = computed(() => quickInput.value.trim().toLowerCase());
 
 const existingMatches = computed(() => {
@@ -62,15 +70,13 @@ async function handleAddAllSuggestions() {
     <!-- Quick Add Bar -->
     <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
       <form class="flex gap-2" @submit.prevent="handleQuickAdd">
-        <div class="relative flex-1">
-          <input
-            v-model="quickInput"
-            type="text"
-            placeholder="Add item to shopping list (e.g. Milk, Apples, Bread)..."
-            class="w-full pl-3.5 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all"
-            @input="showNewItemPrompt = true"
-          >
-        </div>
+        <UInput
+          v-model="quickInput"
+          placeholder="Add item to shopping list (e.g. Milk, Apples, Bread)..."
+          class="flex-1"
+          size="md"
+          @input="showNewItemPrompt = true"
+        />
         <UButton
           type="submit"
           color="primary"
@@ -91,16 +97,19 @@ async function handleAddAllSuggestions() {
             Select from existing pantry:
           </p>
           <div class="flex flex-wrap gap-1.5">
-            <button
+            <UButton
               v-for="match in existingMatches.slice(0, 5)"
               :key="match.id"
               type="button"
-              class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-xl text-xs font-medium transition-all"
+              color="neutral"
+              variant="subtle"
+              size="xs"
+              class="rounded-xl font-medium border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
               @click="handleSelectExisting(match)"
             >
               <span>{{ match.name }}</span>
               <span class="text-[10px] text-slate-400">({{ match.frequencyLabel }})</span>
-            </button>
+            </UButton>
           </div>
         </div>
 
@@ -113,32 +122,25 @@ async function handleAddAllSuggestions() {
             </span>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3 pt-1">
-            <div class="flex items-center space-x-1.5">
-              <span class="text-slate-600">Category:</span>
-              <select
+          <div class="flex flex-wrap items-center gap-4 pt-1">
+            <UFormField label="Category" orientation="horizontal" size="xs">
+              <USelect
                 v-model="newCategory"
-                class="bg-white border border-emerald-200 rounded-lg px-2 py-1 text-xs focus:outline-none"
-              >
-                <option v-for="c in store.categories" :key="c" :value="c">
-                  {{ c }}
-                </option>
-              </select>
-            </div>
+                :items="store.categories"
+                size="xs"
+                class="w-36"
+              />
+            </UFormField>
 
-            <div class="flex items-center space-x-1.5">
-              <span class="text-slate-600">Buy Cadence:</span>
-              <select
+            <UFormField label="Buy Cadence" orientation="horizontal" size="xs">
+              <USelect
                 v-model.number="newCadence"
-                class="bg-white border border-emerald-200 rounded-lg px-2 py-1 text-xs focus:outline-none font-medium"
-              >
-                <option :value="3">Every 3 days</option>
-                <option :value="7">Weekly (7d)</option>
-                <option :value="14">Every 2 weeks (14d)</option>
-                <option :value="21">Every 3 weeks</option>
-                <option :value="30">Monthly (30d)</option>
-              </select>
-            </div>
+                :items="CADENCE_OPTIONS"
+                value-key="value"
+                size="xs"
+                class="w-44 font-medium"
+              />
+            </UFormField>
           </div>
         </div>
       </div>
@@ -157,9 +159,14 @@ async function handleAddAllSuggestions() {
           <div>
             <h3 class="text-sm font-bold text-amber-900 flex items-center space-x-1.5">
               <span>Smart Cadence Suggestions</span>
-              <span class="bg-amber-200/80 text-amber-800 text-[11px] px-2 py-0.2 rounded-full font-bold">
+              <UBadge
+                color="warning"
+                variant="subtle"
+                size="xs"
+                class="rounded-full font-bold bg-amber-200/80 text-amber-800"
+              >
                 {{ store.suggestions.length }} due
-              </span>
+              </UBadge>
             </h3>
             <p class="text-xs text-amber-700/80">
               Items due for replenishment based on your purchase frequency
@@ -178,14 +185,15 @@ async function handleAddAllSuggestions() {
             <span>Add All ({{ store.suggestions.length }})</span>
             <UIcon name="i-lucide-arrow-right" class="w-3.5 h-3.5" />
           </UButton>
-          <button
-            type="button"
-            class="p-1.5 text-amber-700 hover:bg-amber-100 rounded-lg transition-colors"
+          <UButton
+            color="warning"
+            variant="ghost"
+            size="xs"
+            :icon="showSuggestions ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
             :title="showSuggestions ? 'Collapse' : 'Expand'"
+            :aria-label="showSuggestions ? 'Collapse suggestions' : 'Expand suggestions'"
             @click="showSuggestions = !showSuggestions"
-          >
-            <UIcon :name="showSuggestions ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="w-4 h-4" />
-          </button>
+          />
         </div>
       </div>
 
@@ -214,23 +222,28 @@ async function handleAddAllSuggestions() {
                 {{ sug.item.name }}
               </div>
               <div class="flex items-center space-x-1 text-[10px] text-amber-700 font-medium">
-                <span
-                  class="px-1.5 py-0.2 rounded-md"
-                  :class="sug.urgency === 'critical' ? 'bg-rose-100 text-rose-700 font-bold' : 'bg-amber-100 text-amber-800'"
+                <UBadge
+                  :color="sug.urgency === 'critical' ? 'error' : 'warning'"
+                  variant="subtle"
+                  size="xs"
+                  class="font-bold rounded-md"
                 >
                   {{ sug.reason }}
-                </span>
+                </UBadge>
                 <span class="text-slate-400">• {{ sug.item.frequencyLabel }}</span>
               </div>
             </div>
 
-            <button
-              type="button"
-              class="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-lg transition-all shrink-0 border border-emerald-200 hover:border-emerald-600"
+            <UButton
+              color="primary"
+              variant="subtle"
+              size="xs"
+              icon="i-lucide-plus"
+              class="shrink-0 font-semibold"
               @click="store.addToShoppingList({ nameOrId: sug.item.id, quantity: 1 })"
             >
-              + Add
-            </button>
+              Add
+            </UButton>
           </div>
         </div>
       </div>
@@ -241,9 +254,14 @@ async function handleAddAllSuggestions() {
       <div class="flex items-center justify-between px-1">
         <div class="flex items-center space-x-2">
           <h2 class="text-base font-bold text-slate-900">Next Shop List</h2>
-          <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-semibold">
+          <UBadge
+            color="neutral"
+            variant="subtle"
+            size="sm"
+            class="rounded-full font-semibold"
+          >
             {{ store.shoppingList.length }} items
-          </span>
+          </UBadge>
         </div>
 
         <div class="text-xs text-slate-500 hidden sm:block">
@@ -285,24 +303,29 @@ async function handleAddAllSuggestions() {
         >
           <!-- Left: Interactive Tick Circle -->
           <div class="flex items-center space-x-3 min-w-0">
-            <button
-              type="button"
+            <UButton
+              color="success"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-check"
               title="Tick off (Bought - reset cadence & mark in stock)"
-              class="w-8 h-8 rounded-full border-2 border-emerald-500 hover:bg-emerald-500 flex items-center justify-center text-transparent hover:text-white transition-all transform active:scale-90 shrink-0"
+              aria-label="Tick off (Bought - reset cadence & mark in stock)"
+              class="w-8 h-8 rounded-full border-2 border-emerald-500 text-transparent hover:text-white hover:bg-emerald-500 p-0 justify-center transition-all active:scale-90 shrink-0"
               @click="store.checkOffShoppingItem(item)"
-            >
-              <UIcon name="i-lucide-check" class="w-4 h-4 stroke-[3]" />
-            </button>
+            />
 
             <div class="min-w-0">
               <div class="flex items-center space-x-2">
                 <span class="font-bold text-slate-900 text-sm truncate">{{ item.name }}</span>
-                <span
-                  class="hidden xs:inline-block px-2 py-0.2 text-[10px] font-semibold rounded-md border"
+                <UBadge
+                  color="neutral"
+                  variant="outline"
+                  size="xs"
+                  class="hidden xs:inline-flex rounded-md font-semibold"
                   :class="[getCategoryColor(item.category).bg, getCategoryColor(item.category).text, getCategoryColor(item.category).border]"
                 >
                   {{ item.category }}
-                </span>
+                </UBadge>
               </div>
               <div class="flex items-center space-x-2 text-xs text-slate-500 mt-0.5">
                 <span class="inline-flex items-center space-x-1 text-[11px] text-slate-400">
@@ -316,36 +339,44 @@ async function handleAddAllSuggestions() {
 
           <!-- Right: Quantity Controls & Delete ("Didn't buy") Button -->
           <div class="flex items-center space-x-2 shrink-0">
-            <!-- Quantity Stepper -->
-            <div class="flex items-center border border-slate-200 rounded-xl bg-slate-50/70 overflow-hidden">
-              <button
-                type="button"
-                class="px-2 py-1 text-slate-500 hover:text-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors"
+            <!-- Quantity Stepper using UFieldGroup, UButton, and UInput -->
+            <UFieldGroup size="xs">
+              <UButton
+                color="neutral"
+                variant="subtle"
+                icon="i-lucide-minus"
+                :disabled="(item.shoppingListQuantity || 1) <= 1"
+                aria-label="Decrease quantity"
                 @click="store.updateShoppingQuantity(item.id, Math.max(1, (item.shoppingListQuantity || 1) - 1))"
-              >
-                -
-              </button>
-              <span class="px-2 text-xs font-bold text-slate-800 min-w-[20px] text-center">
-                {{ item.shoppingListQuantity || 1 }}
-              </span>
-              <button
-                type="button"
-                class="px-2 py-1 text-slate-500 hover:text-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors"
+              />
+              <UInput
+                type="number"
+                :model-value="item.shoppingListQuantity || 1"
+                min="1"
+                class="w-14"
+                :ui="{ base: 'text-center font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none' }"
+                @update:model-value="(val) => store.updateShoppingQuantity(item.id, Math.max(1, Number(val) || 1))"
+              />
+              <UButton
+                color="neutral"
+                variant="subtle"
+                icon="i-lucide-plus"
+                aria-label="Increase quantity"
                 @click="store.updateShoppingQuantity(item.id, (item.shoppingListQuantity || 1) + 1)"
-              >
-                +
-              </button>
-            </div>
+              />
+            </UFieldGroup>
 
             <!-- Delete button: didn't buy semantic -->
-            <button
-              type="button"
+            <UButton
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              icon="i-lucide-trash-2"
               title="Didn't buy it (Remove from list without resetting cadence)"
-              class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+              aria-label="Didn't buy it"
+              class="text-slate-400 hover:text-rose-600 hover:bg-rose-50"
               @click="store.deleteFromShoppingList(item)"
-            >
-              <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
-            </button>
+            />
           </div>
         </div>
       </div>
@@ -358,27 +389,32 @@ async function handleAddAllSuggestions() {
           <UIcon name="i-lucide-check" class="w-3.5 h-3.5 text-emerald-600" />
           <span>Purchased This Trip ({{ store.sessionPurchased.length }})</span>
         </h3>
-        <button
-          type="button"
-          class="text-[11px] text-slate-400 hover:text-slate-600"
+        <UButton
+          color="neutral"
+          variant="link"
+          size="xs"
+          class="text-slate-400 hover:text-slate-600 p-0"
           @click="store.clearSessionPurchased()"
         >
           Clear
-        </button>
+        </UButton>
       </div>
       <p class="text-[11px] text-slate-500 mb-2.5">
         These items were marked in-stock in your pantry and their cadence timers have been reset to today.
       </p>
       <div class="flex flex-wrap gap-2">
-        <span
+        <UBadge
           v-for="(sessionItem, idx) in store.sessionPurchased"
           :key="`${sessionItem.id}-${idx}`"
-          class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium"
+          color="success"
+          variant="subtle"
+          size="sm"
+          class="rounded-lg font-medium gap-1.5"
         >
           <UIcon name="i-lucide-check" class="w-3 h-3 text-emerald-600" />
           <span class="line-through">{{ sessionItem.name }}</span>
           <span class="text-[10px] text-emerald-600/70 font-normal">at {{ sessionItem.timestamp }}</span>
-        </span>
+        </UBadge>
       </div>
     </div>
   </div>

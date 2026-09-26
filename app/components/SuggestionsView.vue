@@ -33,15 +33,17 @@ async function handleAddAll() {
         </p>
       </div>
 
-      <button
+      <UButton
         v-if="store.suggestions.length > 0"
-        type="button"
-        class="flex items-center space-x-1.5 px-4 py-2 bg-white text-amber-800 hover:bg-amber-50 rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0"
+        color="neutral"
+        variant="solid"
+        size="sm"
+        trailing-icon="i-lucide-arrow-right"
+        class="bg-white text-amber-800 hover:bg-amber-50 rounded-xl font-bold shadow-xs shrink-0"
         @click="handleAddAll"
       >
-        <span>Add All ({{ store.suggestions.length }}) to Shopping List</span>
-        <UIcon name="i-lucide-arrow-right" class="w-4 h-4" />
-      </button>
+        Add All ({{ store.suggestions.length }}) to Shopping List
+      </UButton>
     </div>
 
     <!-- Empty State -->
@@ -74,8 +76,11 @@ async function handleAddAll() {
           >
             <div class="min-w-0">
               <div class="flex items-center space-x-2">
-                <span
-                  class="px-2 py-0.2 text-[10px] font-semibold rounded-md border"
+                <UBadge
+                  color="neutral"
+                  variant="outline"
+                  size="xs"
+                  class="rounded-md font-semibold"
                   :class="[
                     getCategoryColor(sug.item.category).bg,
                     getCategoryColor(sug.item.category).text,
@@ -83,10 +88,15 @@ async function handleAddAll() {
                   ]"
                 >
                   {{ sug.item.category }}
-                </span>
-                <span class="px-2 py-0.2 text-[10px] font-bold rounded-md bg-rose-100 text-rose-800">
+                </UBadge>
+                <UBadge
+                  color="error"
+                  variant="subtle"
+                  size="xs"
+                  class="font-bold rounded-md"
+                >
                   {{ sug.reason }}
-                </span>
+                </UBadge>
               </div>
               <h4 class="font-bold text-slate-900 text-sm mt-1 truncate">{{ sug.item.name }}</h4>
               <div class="text-xs text-slate-500 mt-0.5 flex items-center space-x-2">
@@ -98,14 +108,16 @@ async function handleAddAll() {
               </div>
             </div>
 
-            <button
-              type="button"
-              class="flex items-center space-x-1 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors shrink-0"
+            <UButton
+              color="primary"
+              variant="solid"
+              size="xs"
+              icon="i-lucide-plus"
+              class="rounded-xl font-semibold shrink-0"
               @click="store.addToShoppingList({ nameOrId: sug.item.id, quantity: 1 })"
             >
-              <UIcon name="i-lucide-plus" class="w-3.5 h-3.5" />
-              <span>Add</span>
-            </button>
+              Add
+            </UButton>
           </div>
         </div>
       </div>
@@ -124,8 +136,11 @@ async function handleAddAll() {
           >
             <div class="min-w-0">
               <div class="flex items-center space-x-2">
-                <span
-                  class="px-2 py-0.2 text-[10px] font-semibold rounded-md border"
+                <UBadge
+                  color="neutral"
+                  variant="outline"
+                  size="xs"
+                  class="rounded-md font-semibold"
                   :class="[
                     getCategoryColor(sug.item.category).bg,
                     getCategoryColor(sug.item.category).text,
@@ -133,10 +148,15 @@ async function handleAddAll() {
                   ]"
                 >
                   {{ sug.item.category }}
-                </span>
-                <span class="px-2 py-0.2 text-[10px] font-bold rounded-md bg-amber-100 text-amber-800">
+                </UBadge>
+                <UBadge
+                  color="warning"
+                  variant="subtle"
+                  size="xs"
+                  class="font-bold rounded-md"
+                >
                   {{ sug.reason }}
-                </span>
+                </UBadge>
               </div>
               <h4 class="font-bold text-slate-900 text-sm mt-1 truncate">{{ sug.item.name }}</h4>
               <div class="text-xs text-slate-500 mt-0.5 flex items-center space-x-2">
@@ -148,14 +168,16 @@ async function handleAddAll() {
               </div>
             </div>
 
-            <button
-              type="button"
-              class="flex items-center space-x-1 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors shrink-0"
+            <UButton
+              color="primary"
+              variant="solid"
+              size="xs"
+              icon="i-lucide-plus"
+              class="rounded-xl font-semibold shrink-0"
               @click="store.addToShoppingList({ nameOrId: sug.item.id, quantity: 1 })"
             >
-              <UIcon name="i-lucide-plus" class="w-3.5 h-3.5" />
-              <span>Add</span>
-            </button>
+              Add
+            </UButton>
           </div>
         </div>
       </div>
@@ -174,8 +196,11 @@ async function handleAddAll() {
           >
             <div class="min-w-0">
               <div class="flex items-center space-x-2">
-                <span
-                  class="px-2 py-0.2 text-[10px] font-semibold rounded-md border"
+                <UBadge
+                  color="neutral"
+                  variant="outline"
+                  size="xs"
+                  class="rounded-md font-semibold"
                   :class="[
                     getCategoryColor(sug.item.category).bg,
                     getCategoryColor(sug.item.category).text,
@@ -183,10 +208,15 @@ async function handleAddAll() {
                   ]"
                 >
                   {{ sug.item.category }}
-                </span>
-                <span class="px-2 py-0.2 text-[10px] font-bold rounded-md bg-yellow-100 text-yellow-800">
+                </UBadge>
+                <UBadge
+                  color="warning"
+                  variant="subtle"
+                  size="xs"
+                  class="font-bold rounded-md"
+                >
                   {{ sug.reason }}
-                </span>
+                </UBadge>
               </div>
               <h4 class="font-bold text-slate-900 text-sm mt-1 truncate">{{ sug.item.name }}</h4>
               <div class="text-xs text-slate-500 mt-0.5 flex items-center space-x-2">
@@ -198,14 +228,16 @@ async function handleAddAll() {
               </div>
             </div>
 
-            <button
-              type="button"
-              class="flex items-center space-x-1 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors shrink-0"
+            <UButton
+              color="primary"
+              variant="solid"
+              size="xs"
+              icon="i-lucide-plus"
+              class="rounded-xl font-semibold shrink-0"
               @click="store.addToShoppingList({ nameOrId: sug.item.id, quantity: 1 })"
             >
-              <UIcon name="i-lucide-plus" class="w-3.5 h-3.5" />
-              <span>Add</span>
-            </button>
+              Add
+            </UButton>
           </div>
         </div>
       </div>

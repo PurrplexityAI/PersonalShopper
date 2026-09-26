@@ -51,13 +51,14 @@ const tabs = computed(() => [
         >
           <UIcon :name="tab.icon" class="w-4 h-4" :class="store.activeTab === tab.id ? 'text-emerald-600' : 'text-slate-400'" />
           <span>{{ tab.label }}</span>
-          <span
+          <UBadge
             v-if="tab.badge > 0"
-            class="ml-1.5 px-2 py-0.5 text-xs rounded-full font-semibold"
+            size="sm"
+            class="ml-1.5 rounded-full font-semibold"
             :class="tab.badgeColor"
           >
             {{ tab.badge }}
-          </span>
+          </UBadge>
         </button>
       </div>
     </nav>
@@ -79,13 +80,14 @@ const tabs = computed(() => [
               class="w-5 h-5 transition-transform"
               :class="store.activeTab === tab.id ? 'scale-110 text-emerald-600' : 'text-slate-500'"
             />
-            <span
+            <UBadge
               v-if="tab.badge > 0"
+              size="xs"
               class="absolute -top-1.5 -right-3 px-1.5 py-0.2 min-w-[18px] text-[10px] leading-tight text-center rounded-full font-bold shadow-xs"
               :class="tab.badgeColor"
             >
               {{ tab.badge > 99 ? '99+' : tab.badge }}
-            </span>
+            </UBadge>
           </div>
           <span class="text-[11px] mt-1">{{ tab.shortLabel }}</span>
         </button>

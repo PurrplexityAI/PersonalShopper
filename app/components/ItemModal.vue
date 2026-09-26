@@ -58,6 +58,11 @@ watch(
   }
 );
 
+const categorySelectItems = computed(() => [
+  ...store.categories.map((cat) => ({ label: cat, value: cat })),
+  { label: "+ Add Custom Category...", value: "__custom__" },
+]);
+
 const duplicateConflict = computed(() => {
   const trimmed = name.value.trim().toLowerCase();
   if (!trimmed) return null;
@@ -117,162 +122,135 @@ async function handleSubmit() {
         </div>
 
         <!-- Item Name -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-            Item Name *
-          </label>
-          <input
+        <UFormField
+          label="Item Name"
+          required
+          :error="duplicateConflict ? 'Already in pantry. Choose a unique name or edit existing.' : undefined"
+        >
+          <UInput
             v-model="name"
-            type="text"
-            required
             placeholder="e.g. Greek Yogurt, Whole Milk, Bananas"
-            class="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all"
-            :class="[
-              duplicateConflict
-                ? 'border-rose-300 ring-rose-200 focus:border-rose-500'
-                : 'border-slate-300 focus:border-emerald-500 focus:ring-emerald-200'
-            ]"
+            class="w-full"
+            :color="duplicateConflict ? 'error' : 'neutral'"
+            required
             @input="error = null"
-          >
-          <p v-if="duplicateConflict" class="text-xs text-rose-600 mt-1 flex items-center space-x-1">
-            <UIcon name="i-lucide-alert-circle" class="w-3.5 h-3.5" />
-            <span>Already in pantry. Choose a unique name or edit existing.</span>
-          </p>
-        </div>
+          />
+        </UFormField>
 
         <!-- Category -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center space-x-1">
-            <UIcon name="i-lucide-tag" class="w-3.5 h-3.5 text-slate-400" />
-            <span>Category</span>
-          </label>
-          <select
+        <UFormField label="Category">
+          <template #label>
+            <span class="flex items-center space-x-1">
+              <UIcon name="i-lucide-tag" class="w-3.5 h-3.5 text-slate-400" />
+              <span>Category</span>
+            </span>
+          </template>
+          <USelect
             v-model="category"
-            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 bg-white"
-          >
-            <option v-for="cat in store.categories" :key="cat" :value="cat">
-              {{ cat }}
-            </option>
-            <option value="__custom__">+ Add Custom Category...</option>
-          </select>
-          <input
+            :items="categorySelectItems"
+            value-key="value"
+            class="w-full"
+          />
+          <UInput
             v-if="category === '__custom__'"
             v-model="customCategory"
-            type="text"
             placeholder="Enter new category name"
-            class="mt-2 w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-          >
-        </div>
+            class="mt-2 w-full"
+          />
+        </UFormField>
 
         <!-- Purchase Cadence -->
-        <div class="pt-1">
-          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center space-x-1">
-            <UIcon name="i-lucide-calendar" class="w-3.5 h-3.5 text-slate-400" />
-            <span>Purchase Cadence (How often to buy)</span>
-          </label>
+        <UFormField label="Purchase Cadence (How often to buy)">
+          <template #label>
+            <span class="flex items-center space-x-1">
+              <UIcon name="i-lucide-calendar" class="w-3.5 h-3.5 text-slate-400" />
+              <span>Purchase Cadence (How often to buy)</span>
+            </span>
+          </template>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
-            <button
+            <UButton
               v-for="preset in CADENCE_PRESETS"
               :key="preset.days"
               type="button"
-              class="px-3 py-2 text-xs font-medium rounded-xl border transition-all text-center"
-              :class="[
-                !isCustomCadence && frequencyDays === preset.days
-                  ? 'bg-emerald-50 border-emerald-500 text-emerald-700 font-semibold ring-1 ring-emerald-400 shadow-xs'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-              ]"
+              size="xs"
+              class="justify-center rounded-xl font-medium"
+              :color="!isCustomCadence && frequencyDays === preset.days ? 'primary' : 'neutral'"
+              :variant="!isCustomCadence && frequencyDays === preset.days ? 'subtle' : 'outline'"
               @click="() => { isCustomCadence = false; frequencyDays = preset.days; }"
             >
               {{ preset.label }}
-            </button>
-            <button
+            </UButton>
+            <UButton
               type="button"
-              class="px-3 py-2 text-xs font-medium rounded-xl border transition-all text-center"
-              :class="[
-                isCustomCadence
-                  ? 'bg-emerald-50 border-emerald-500 text-emerald-700 font-semibold ring-1 ring-emerald-400 shadow-xs'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-              ]"
+              size="xs"
+              class="justify-center rounded-xl font-medium"
+              :color="isCustomCadence ? 'primary' : 'neutral'"
+              :variant="isCustomCadence ? 'subtle' : 'outline'"
               @click="isCustomCadence = true"
             >
               Custom Days
-            </button>
+            </UButton>
           </div>
 
           <div v-if="isCustomCadence" class="flex items-center space-x-2 mt-2">
             <span class="text-xs text-slate-600">Buy every:</span>
-            <input
+            <UInput
               v-model="customDays"
               type="number"
               min="1"
               max="365"
-              class="w-24 px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:border-emerald-500"
-            >
+              class="w-24"
+            />
             <span class="text-xs text-slate-600">days</span>
           </div>
-        </div>
+        </UFormField>
 
         <!-- Stock Status & Quantity -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
           <!-- In Stock Toggle -->
           <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
-            <div>
-              <span class="text-sm font-semibold text-slate-800 block">In Stock</span>
-              <span class="text-xs text-slate-500">Currently in pantry</span>
-            </div>
-            <button
-              type="button"
-              class="w-12 h-7 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out"
-              :class="inStock ? 'bg-emerald-600' : 'bg-slate-300'"
-              @click="inStock = !inStock"
-            >
-              <div
-                class="bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out"
-                :class="inStock ? 'translate-x-5' : 'translate-x-0'"
-              />
-            </button>
+            <USwitch
+              v-model="inStock"
+              label="In Stock"
+              description="Currently in pantry"
+              color="primary"
+            />
           </div>
 
           <!-- Quantity and Unit -->
           <div class="flex space-x-2">
-            <div class="w-1/2">
-              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Quantity
-              </label>
-              <input
+            <UFormField label="Quantity" class="w-1/2">
+              <UInput
                 v-model.number="quantity"
                 type="number"
                 min="0"
-                class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:outline-none focus:border-emerald-500"
-              >
-            </div>
-            <div class="w-1/2">
-              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Unit
-              </label>
-              <input
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField label="Unit" class="w-1/2">
+              <UInput
                 v-model="unit"
-                type="text"
                 placeholder="pack, bottle, kg"
-                class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:outline-none focus:border-emerald-500"
-              >
-            </div>
+                class="w-full"
+              />
+            </UFormField>
           </div>
         </div>
 
         <!-- Notes -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1 flex items-center space-x-1">
-            <UIcon name="i-lucide-file-text" class="w-3.5 h-3.5 text-slate-400" />
-            <span>Notes (optional)</span>
-          </label>
-          <input
+        <UFormField label="Notes (optional)">
+          <template #label>
+            <span class="flex items-center space-x-1">
+              <UIcon name="i-lucide-file-text" class="w-3.5 h-3.5 text-slate-400" />
+              <span>Notes (optional)</span>
+            </span>
+          </template>
+          <UInput
             v-model="notes"
-            type="text"
             placeholder="e.g. Brand preference, aisle location"
-            class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:outline-none focus:border-emerald-500"
-          >
-        </div>
+            class="w-full"
+          />
+        </UFormField>
       </form>
     </template>
 
