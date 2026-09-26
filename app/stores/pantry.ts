@@ -330,53 +330,5 @@ export const usePantryStore = defineStore("pantry", {
         this.notify("Failed to add items", getErrorMessage(err), "error");
       }
     },
-
-    async exportData() {
-      try {
-        const data = await $fetch<{ items: PantryItem[]; exportedAt: string }>("/api/data/export");
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `personal-shopper-backup-${new Date().toISOString().slice(0, 10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        this.notify("Pantry inventory exported successfully!");
-      } catch (err) {
-        this.notify("Export failed", getErrorMessage(err), "error");
-        throw err;
-      }
-    },
-
-    async importData(incomingItems: PantryItem[]) {
-      try {
-        const res = await $fetch<{ success: boolean; message: string }>("/api/data/import", {
-          method: "POST",
-          body: { items: incomingItems },
-        });
-        this.notify(res.message, undefined, "success");
-        await this.loadData(true);
-        return res.message;
-      } catch (err) {
-        this.notify("Import failed", getErrorMessage(err), "error");
-        throw err;
-      }
-    },
-
-    async resetSampleData() {
-      if (!window.confirm("Reset pantry to sample grocery items? Your current entries will be replaced.")) {
-        return;
-      }
-      try {
-        const res = await $fetch<{ success: boolean; message: string }>("/api/data/reset-sample", {
-          method: "POST",
-        });
-        this.notify(res.message, undefined, "success");
-        await this.loadData(true);
-      } catch (err) {
-        this.notify("Failed to reset data", getErrorMessage(err), "error");
-        throw err;
-      }
-    },
   },
 });

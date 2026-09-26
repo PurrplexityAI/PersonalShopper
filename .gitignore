@@ -4,3 +4,6 @@
 .nuxt
 .output
 .nuxtrc
+.env
+.env.*
+!.env.example

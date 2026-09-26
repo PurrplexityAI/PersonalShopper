@@ -41,11 +41,11 @@ const store = usePantryStore();
           color="neutral"
           variant="subtle"
           icon="i-lucide-smartphone"
-          title="Backup, Sync & Mobile Access"
+          title="Mobile Access"
           @click="store.openDataModal()"
         >
-          <span class="hidden sm:inline">Data & Sync</span>
-          <span class="sm:hidden">Sync</span>
+          <span class="hidden sm:inline">Mobile</span>
+          <span class="sm:hidden">Mobile</span>
         </UButton>
       </div>
     </div>

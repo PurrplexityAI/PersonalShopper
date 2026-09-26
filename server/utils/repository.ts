@@ -24,7 +24,4 @@ export interface PantryRepository {
   updateShoppingQuantity(id: string, quantity: number): Promise<PantryItem>;
   getSuggestions(now?: Date): Promise<ShoppingSuggestion[]>;
   addBulkToShoppingList(itemIds: string[]): Promise<PantryItem[]>;
-  exportData(): Promise<{ items: PantryItem[]; exportedAt: string }>;
-  importData(incomingItems: PantryItem[]): Promise<{ count: number }>;
-  resetSampleData(): Promise<PantryItem[]>;
 }

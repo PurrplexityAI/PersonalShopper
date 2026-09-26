@@ -1,0 +1,21 @@
+// use prisma-8
+
+model PantryItem {
+  id                   String             @id @default(uuid())
+  name                 String             @unique
+  category             String             @default("General")
+  inStock              Boolean            @default(true)
+  quantity             Int                @default(1)
+  unit                 String             @default("items")
+  frequencyDays        Int                @default(7)
+  frequencyLabel       String             @default("Weekly (7d)")
+  lastPurchasedAt      TimestamptzString?
+  nextDueDate          TimestamptzString?
+  inShoppingList       Boolean            @default(false)
+  shoppingListQuantity Int                @default(1)
+  notes                String?
+  createdAt            TimestamptzString  @default(now())
+  updatedAt            TimestamptzString  @default(now())
+
+  @@map("pantry_items")
+}

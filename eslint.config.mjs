@@ -3,6 +3,13 @@ import withNuxt from "./.nuxt/eslint.config.mjs";
 
 export default withNuxt(
   {
+    ignores: [
+      "prisma/contract.d.ts",
+      "prisma/contract.json",
+      ".agents/**",
+    ],
+  },
+  {
     rules: {
       // Warn when defined variables are not used
       "no-unused-vars": "warn",
