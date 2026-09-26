@@ -126,7 +126,7 @@ export const usePantryStore = defineStore("pantry", {
         if (catRes && catRes.data) {
           this.categories = catRes.data;
         }
-      } catch {
+      } catch (err) {
         // Fallback to localStorage if offline or in Capacitor without backend
         if (typeof window !== "undefined") {
           const cached = localStorage.getItem(STORAGE_KEY);
@@ -155,7 +155,7 @@ export const usePantryStore = defineStore("pantry", {
             }
           }
         }
-        this.notify("Error connecting to pantry server", err.message, "error");
+        this.notify("Error connecting to pantry server", getErrorMessage(err), "error");
       } finally {
         this.isLoading = false;
         this.isRefreshing = false;
