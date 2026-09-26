@@ -8,7 +8,8 @@
     "build": "nuxt build",
     "preview": "nuxt preview",
     "test": "nuxt test",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "@nuxt/ui": "4.11.2",
