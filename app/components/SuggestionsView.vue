@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { usePantryStore } from "~~/app/stores/pantry";
-import { getCategoryColor } from "~~/app/utils/format";
 
 const store = usePantryStore();
 
@@ -22,24 +21,24 @@ async function handleAddAll() {
 <template>
   <div class="space-y-4 pb-20 sm:pb-8">
     <!-- Header Banner -->
-    <div class="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div class="bg-warning/10 border border-warning/30 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div>
         <div class="flex items-center space-x-2">
-          <UIcon name="i-lucide-sparkles" class="w-5 h-5 text-amber-200" />
-          <h2 class="text-lg font-bold">Cadence Restock Suggestions</h2>
+          <UIcon name="i-lucide-sparkles" class="w-5 h-5 text-warning" />
+          <h2 class="text-lg font-bold text-highlighted">Cadence Restock Suggestions</h2>
         </div>
-        <p class="text-xs text-amber-100 mt-1 max-w-xl">
+        <p class="text-muted mt-1 max-w-xl">
           Calculated from your custom purchase frequencies and current pantry stock status. Add them to your shopping list with a single tap.
         </p>
       </div>
 
       <UButton
         v-if="store.suggestions.length > 0"
-        color="neutral"
+        color="warning"
         variant="solid"
-        size="sm"
+        size="md"
         trailing-icon="i-lucide-arrow-right"
-        class="bg-white text-amber-800 hover:bg-amber-50 rounded-xl font-bold shadow-xs shrink-0"
+        class="shrink-0 font-bold"
         @click="handleAddAll"
       >
         Add All ({{ store.suggestions.length }}) to Shopping List
@@ -49,13 +48,13 @@ async function handleAddAll() {
     <!-- Empty State -->
     <div
       v-if="store.suggestions.length === 0"
-      class="bg-white rounded-2xl border border-slate-200 p-10 text-center space-y-3"
+      class="bg-default rounded-2xl border border-default p-10 text-center space-y-3"
     >
-      <div class="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center">
+      <div class="w-14 h-14 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center">
         <UIcon name="i-lucide-check" class="w-7 h-7 stroke-[2.5]" />
       </div>
-      <h3 class="text-base font-bold text-slate-800">Everything is well-stocked!</h3>
-      <p class="text-xs text-slate-500 max-w-sm mx-auto">
+      <h3 class="text-base font-bold text-highlighted">Everything is well-stocked!</h3>
+      <p class="text-muted max-w-sm mx-auto">
         No pantry items are currently overdue or low according to their purchase cadences.
       </p>
     </div>
@@ -64,7 +63,7 @@ async function handleAddAll() {
     <div v-else class="space-y-5">
       <!-- Critical: Out of stock -->
       <div v-if="criticalItems.length > 0" class="space-y-2">
-        <h3 class="text-xs font-bold text-rose-700 uppercase tracking-wider flex items-center space-x-1.5">
+        <h3 class="font-bold text-error uppercase tracking-wider flex items-center space-x-1.5">
           <UIcon name="i-lucide-alert-triangle" class="w-3.5 h-3.5" />
           <span>Out of Stock in Pantry ({{ criticalItems.length }})</span>
         </h3>
@@ -72,36 +71,29 @@ async function handleAddAll() {
           <div
             v-for="sug in criticalItems"
             :key="sug.item.id"
-            class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs hover:border-slate-300 transition-all flex items-center justify-between gap-3"
+            class="bg-default rounded-2xl border border-default p-4 shadow-xs hover:border-accented transition-all flex items-center justify-between gap-3"
           >
             <div class="min-w-0">
               <div class="flex items-center space-x-2">
                 <UBadge
                   color="neutral"
-                  variant="outline"
-                  size="xs"
-                  class="rounded-md font-semibold"
-                  :class="[
-                    getCategoryColor(sug.item.category).bg,
-                    getCategoryColor(sug.item.category).text,
-                    getCategoryColor(sug.item.category).border
-                  ]"
+                  variant="subtle"
+                  size="md"
                 >
                   {{ sug.item.category }}
                 </UBadge>
                 <UBadge
                   color="error"
                   variant="subtle"
-                  size="xs"
-                  class="font-bold rounded-md"
+                  size="md"
                 >
                   {{ sug.reason }}
                 </UBadge>
               </div>
-              <h4 class="font-bold text-slate-900 text-sm mt-1 truncate">{{ sug.item.name }}</h4>
-              <div class="text-xs text-slate-500 mt-0.5 flex items-center space-x-2">
+              <h4 class="font-bold text-highlighted mt-1 truncate">{{ sug.item.name }}</h4>
+              <div class="text-muted mt-0.5 flex items-center space-x-2">
                 <span class="flex items-center space-x-1">
-                  <UIcon name="i-lucide-clock" class="w-3 h-3 text-slate-400" />
+                  <UIcon name="i-lucide-clock" class="w-3 h-3 text-dimmed" />
                   <span>{{ sug.item.frequencyLabel }}</span>
                 </span>
                 <span>• In stock: {{ sug.item.inStock ? `${sug.item.quantity} ${sug.item.unit}` : 'No' }}</span>
@@ -111,9 +103,9 @@ async function handleAddAll() {
             <UButton
               color="primary"
               variant="solid"
-              size="xs"
+              size="md"
               icon="i-lucide-plus"
-              class="rounded-xl font-semibold shrink-0"
+              class="shrink-0"
               @click="store.addToShoppingList({ nameOrId: sug.item.id, quantity: 1 })"
             >
               Add
@@ -124,7 +116,7 @@ async function handleAddAll() {
 
       <!-- High: Overdue or due today -->
       <div v-if="highItems.length > 0" class="space-y-2">
-        <h3 class="text-xs font-bold text-amber-700 uppercase tracking-wider flex items-center space-x-1.5">
+        <h3 class="font-bold text-warning uppercase tracking-wider flex items-center space-x-1.5">
           <UIcon name="i-lucide-clock" class="w-3.5 h-3.5" />
           <span>Due Today or Overdue ({{ highItems.length }})</span>
         </h3>
@@ -132,36 +124,29 @@ async function handleAddAll() {
           <div
             v-for="sug in highItems"
             :key="sug.item.id"
-            class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs hover:border-slate-300 transition-all flex items-center justify-between gap-3"
+            class="bg-default rounded-2xl border border-default p-4 shadow-xs hover:border-accented transition-all flex items-center justify-between gap-3"
           >
             <div class="min-w-0">
               <div class="flex items-center space-x-2">
                 <UBadge
                   color="neutral"
-                  variant="outline"
-                  size="xs"
-                  class="rounded-md font-semibold"
-                  :class="[
-                    getCategoryColor(sug.item.category).bg,
-                    getCategoryColor(sug.item.category).text,
-                    getCategoryColor(sug.item.category).border
-                  ]"
+                  variant="subtle"
+                  size="md"
                 >
                   {{ sug.item.category }}
                 </UBadge>
                 <UBadge
                   color="warning"
                   variant="subtle"
-                  size="xs"
-                  class="font-bold rounded-md"
+                  size="md"
                 >
                   {{ sug.reason }}
                 </UBadge>
               </div>
-              <h4 class="font-bold text-slate-900 text-sm mt-1 truncate">{{ sug.item.name }}</h4>
-              <div class="text-xs text-slate-500 mt-0.5 flex items-center space-x-2">
+              <h4 class="font-bold text-highlighted mt-1 truncate">{{ sug.item.name }}</h4>
+              <div class="text-muted mt-0.5 flex items-center space-x-2">
                 <span class="flex items-center space-x-1">
-                  <UIcon name="i-lucide-clock" class="w-3 h-3 text-slate-400" />
+                  <UIcon name="i-lucide-clock" class="w-3 h-3 text-dimmed" />
                   <span>{{ sug.item.frequencyLabel }}</span>
                 </span>
                 <span>• In stock: {{ sug.item.inStock ? `${sug.item.quantity} ${sug.item.unit}` : 'No' }}</span>
@@ -171,9 +156,9 @@ async function handleAddAll() {
             <UButton
               color="primary"
               variant="solid"
-              size="xs"
+              size="md"
               icon="i-lucide-plus"
-              class="rounded-xl font-semibold shrink-0"
+              class="shrink-0"
               @click="store.addToShoppingList({ nameOrId: sug.item.id, quantity: 1 })"
             >
               Add
@@ -184,44 +169,37 @@ async function handleAddAll() {
 
       <!-- Upcoming: Due in 1-2 days -->
       <div v-if="upcomingItems.length > 0" class="space-y-2">
-        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
-          <UIcon name="i-lucide-sparkles" class="w-3.5 h-3.5 text-slate-400" />
+        <h3 class="font-bold text-toned uppercase tracking-wider flex items-center space-x-1.5">
+          <UIcon name="i-lucide-sparkles" class="w-3.5 h-3.5 text-dimmed" />
           <span>Upcoming Replenishment ({{ upcomingItems.length }})</span>
         </h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div
             v-for="sug in upcomingItems"
             :key="sug.item.id"
-            class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs hover:border-slate-300 transition-all flex items-center justify-between gap-3"
+            class="bg-default rounded-2xl border border-default p-4 shadow-xs hover:border-accented transition-all flex items-center justify-between gap-3"
           >
             <div class="min-w-0">
               <div class="flex items-center space-x-2">
                 <UBadge
                   color="neutral"
-                  variant="outline"
-                  size="xs"
-                  class="rounded-md font-semibold"
-                  :class="[
-                    getCategoryColor(sug.item.category).bg,
-                    getCategoryColor(sug.item.category).text,
-                    getCategoryColor(sug.item.category).border
-                  ]"
+                  variant="subtle"
+                  size="md"
                 >
                   {{ sug.item.category }}
                 </UBadge>
                 <UBadge
                   color="warning"
                   variant="subtle"
-                  size="xs"
-                  class="font-bold rounded-md"
+                  size="md"
                 >
                   {{ sug.reason }}
                 </UBadge>
               </div>
-              <h4 class="font-bold text-slate-900 text-sm mt-1 truncate">{{ sug.item.name }}</h4>
-              <div class="text-xs text-slate-500 mt-0.5 flex items-center space-x-2">
+              <h4 class="font-bold text-highlighted mt-1 truncate">{{ sug.item.name }}</h4>
+              <div class="text-muted mt-0.5 flex items-center space-x-2">
                 <span class="flex items-center space-x-1">
-                  <UIcon name="i-lucide-clock" class="w-3 h-3 text-slate-400" />
+                  <UIcon name="i-lucide-clock" class="w-3 h-3 text-dimmed" />
                   <span>{{ sug.item.frequencyLabel }}</span>
                 </span>
                 <span>• In stock: {{ sug.item.inStock ? `${sug.item.quantity} ${sug.item.unit}` : 'No' }}</span>
@@ -231,9 +209,9 @@ async function handleAddAll() {
             <UButton
               color="primary"
               variant="solid"
-              size="xs"
+              size="md"
               icon="i-lucide-plus"
-              class="rounded-xl font-semibold shrink-0"
+              class="shrink-0"
               @click="store.addToShoppingList({ nameOrId: sug.item.id, quantity: 1 })"
             >
               Add

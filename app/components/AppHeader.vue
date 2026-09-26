@@ -5,17 +5,17 @@ const store = usePantryStore();
 </script>
 
 <template>
-  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 safe-top">
+  <header class="sticky top-0 z-30 bg-default/90 backdrop-blur-md border-b border-default safe-top">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-          <UIcon name="i-lucide-shopping-basket" class="w-5 h-5 text-white" />
+        <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-inverted shadow-md">
+          <UIcon name="i-lucide-shopping-basket" class="w-5 h-5 text-inverted" />
         </div>
         <div>
-          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-slate-900 leading-tight">
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-highlighted leading-tight">
             Personal Shopper
           </h1>
-          <p class="text-xs text-slate-500 hidden sm:block">
+          <p class="text-muted hidden sm:block">
             Pantry Inventory & Smart Cadence Shopping
           </p>
         </div>
@@ -32,8 +32,8 @@ const store = usePantryStore();
         >
           <UIcon
             name="i-lucide-refresh-cw"
-            class="w-4 h-4 text-slate-600"
-            :class="{ 'animate-spin text-emerald-600': store.isRefreshing }"
+            class="w-4 h-4 text-toned"
+            :class="{ 'animate-spin text-primary': store.isRefreshing }"
           />
         </UButton>
 

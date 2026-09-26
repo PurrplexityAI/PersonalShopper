@@ -68,37 +68,37 @@ async function handleResetSample() {
   >
     <template #body>
       <div class="space-y-4">
-        <div v-if="message" class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center space-x-2 text-emerald-800 text-xs">
+        <div v-if="message" class="p-3 bg-success/10 border border-success/20 rounded-xl flex items-center space-x-2 text-success">
           <UIcon name="i-lucide-check" class="w-4 h-4 shrink-0" />
           <span>{{ message }}</span>
         </div>
 
-        <div v-if="error" class="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center space-x-2 text-rose-800 text-xs">
+        <div v-if="error" class="p-3 bg-error/10 border border-error/20 rounded-xl flex items-center space-x-2 text-error">
           <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" />
           <span>{{ error }}</span>
         </div>
 
         <!-- Mobile Access Guide -->
-        <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3.5 space-y-2">
-          <div class="flex items-center space-x-2 text-emerald-900 font-bold text-xs">
-            <UIcon name="i-lucide-smartphone" class="w-4 h-4 text-emerald-600" />
+        <div class="bg-primary/5 border border-primary/20 rounded-xl p-3.5 space-y-2">
+          <div class="flex items-center space-x-2 text-highlighted font-bold">
+            <UIcon name="i-lucide-smartphone" class="w-4 h-4 text-primary" />
             <span>Mobile Phone Access (Local Wi-Fi)</span>
           </div>
-          <p class="text-xs text-slate-600 leading-relaxed">
+          <p class="text-toned leading-relaxed">
             To use Personal Shopper on your phone, connect to the same Wi-Fi network and open your computer's IP address:
           </p>
-          <div class="bg-white px-3 py-2 rounded-lg border border-emerald-200 text-xs font-mono text-emerald-800 flex items-center justify-between">
+          <div class="bg-default px-3 py-2 rounded-lg border border-primary/30 font-mono text-primary flex items-center justify-between">
             <span>http://&lt;your-pc-ip&gt;:3000</span>
-            <span class="text-[10px] text-slate-400 font-sans font-normal">Check terminal on start</span>
+            <span class="text-muted font-sans font-normal">Check terminal on start</span>
           </div>
-          <p class="text-[11px] text-slate-500">
+          <p class="text-muted">
             Tip: On iOS Safari or Android Chrome, tap <strong>"Share" &gt; "Add to Home Screen"</strong> for a native app feel!
           </p>
         </div>
 
         <!-- Backup & Restore -->
         <div class="space-y-2 pt-1">
-          <h3 class="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+          <h3 class="font-semibold text-toned uppercase tracking-wider">
             Backup & Restore Data
           </h3>
 
@@ -109,7 +109,7 @@ async function handleResetSample() {
               size="md"
               icon="i-lucide-download"
               :disabled="loading"
-              class="justify-center rounded-xl"
+              class="justify-center"
               @click="handleExport"
             >
               Export Backup (JSON)
@@ -121,7 +121,7 @@ async function handleResetSample() {
               size="md"
               icon="i-lucide-upload"
               :disabled="loading"
-              class="justify-center rounded-xl"
+              class="justify-center"
               @click="fileInputRef?.click()"
             >
               Import Backup
@@ -138,7 +138,7 @@ async function handleResetSample() {
         </div>
 
         <!-- Reset to Samples -->
-        <div class="pt-2 border-t border-slate-100">
+        <div class="pt-2 border-t border-default">
           <UButton
             color="error"
             variant="outline"
@@ -146,7 +146,6 @@ async function handleResetSample() {
             block
             icon="i-lucide-rotate-ccw"
             :disabled="loading"
-            class="rounded-xl"
             @click="handleResetSample"
           >
             Reset to Sample Groceries

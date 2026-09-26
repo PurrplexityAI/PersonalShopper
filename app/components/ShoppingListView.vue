@@ -2,7 +2,6 @@
 import { ref, computed } from "vue";
 import { usePantryStore } from "~~/app/stores/pantry";
 import type { PantryItem } from "~~/shared/types";
-import { getCategoryColor } from "~~/app/utils/format";
 
 const store = usePantryStore();
 
@@ -68,7 +67,7 @@ async function handleAddAllSuggestions() {
 <template>
   <div class="space-y-4 pb-20 sm:pb-8">
     <!-- Quick Add Bar -->
-    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
+    <div class="bg-default rounded-2xl border border-default p-4 shadow-xs">
       <form class="flex gap-2" @submit.prevent="handleQuickAdd">
         <UInput
           v-model="quickInput"
@@ -90,10 +89,10 @@ async function handleAddAllSuggestions() {
       </form>
 
       <!-- Real-time Suggestions / Pantry matches when typing -->
-      <div v-if="quickInput.trim().length > 0 && showNewItemPrompt" class="mt-3 pt-3 border-t border-slate-100 space-y-2">
+      <div v-if="quickInput.trim().length > 0 && showNewItemPrompt" class="mt-3 pt-3 border-t border-default space-y-2">
         <!-- Existing pantry items match -->
         <div v-if="existingMatches.length > 0">
-          <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+          <p class="font-semibold text-muted uppercase tracking-wider mb-1.5">
             Select from existing pantry:
           </p>
           <div class="flex flex-wrap gap-1.5">
@@ -102,43 +101,42 @@ async function handleAddAllSuggestions() {
               :key="match.id"
               type="button"
               color="neutral"
-              variant="subtle"
-              size="xs"
-              class="rounded-xl font-medium border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+              variant="outline"
+              size="md"
               @click="handleSelectExisting(match)"
             >
               <span>{{ match.name }}</span>
-              <span class="text-[10px] text-slate-400">({{ match.frequencyLabel }})</span>
+              <span class="text-dimmed">({{ match.frequencyLabel }})</span>
             </UButton>
           </div>
         </div>
 
         <!-- Brand new item creation config -->
-        <div v-if="!exactMatch" class="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3 text-xs space-y-2">
-          <div class="flex items-center space-x-1.5 text-emerald-800 font-medium">
-            <UIcon name="i-lucide-plus-circle" class="w-4 h-4 text-emerald-600 shrink-0" />
+        <div v-if="!exactMatch" class="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
+          <div class="flex items-center space-x-1.5 text-highlighted font-medium">
+            <UIcon name="i-lucide-plus-circle" class="w-4 h-4 text-primary shrink-0" />
             <span>
               <strong>"{{ quickInput.trim() }}"</strong> will be added to your shopping list & created in your pantry.
             </span>
           </div>
 
           <div class="flex flex-wrap items-center gap-4 pt-1">
-            <UFormField label="Category" orientation="horizontal" size="xs">
+            <UFormField label="Category" orientation="horizontal" size="md">
               <USelect
                 v-model="newCategory"
                 :items="store.categories"
-                size="xs"
-                class="w-36"
+                size="md"
+                class="w-40"
               />
             </UFormField>
 
-            <UFormField label="Buy Cadence" orientation="horizontal" size="xs">
+            <UFormField label="Buy Cadence" orientation="horizontal" size="md">
               <USelect
                 v-model.number="newCadence"
                 :items="CADENCE_OPTIONS"
                 value-key="value"
-                size="xs"
-                class="w-44 font-medium"
+                size="md"
+                class="w-48 font-medium"
               />
             </UFormField>
           </div>
@@ -149,26 +147,25 @@ async function handleAddAllSuggestions() {
     <!-- Cadence Suggestions Section -->
     <div
       v-if="store.suggestions.length > 0"
-      class="bg-gradient-to-r from-amber-50 to-orange-50/60 border border-amber-200/80 rounded-2xl p-4 shadow-xs transition-all"
+      class="bg-warning/10 border border-warning/30 rounded-2xl p-4 shadow-xs transition-all"
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
+          <div class="w-8 h-8 rounded-xl bg-warning text-inverted flex items-center justify-center shadow-xs">
             <UIcon name="i-lucide-sparkles" class="w-4 h-4" />
           </div>
           <div>
-            <h3 class="text-sm font-bold text-amber-900 flex items-center space-x-1.5">
+            <h3 class="font-bold text-highlighted flex items-center space-x-2">
               <span>Smart Cadence Suggestions</span>
               <UBadge
                 color="warning"
                 variant="subtle"
-                size="xs"
-                class="rounded-full font-bold bg-amber-200/80 text-amber-800"
+                size="md"
               >
                 {{ store.suggestions.length }} due
               </UBadge>
             </h3>
-            <p class="text-xs text-amber-700/80">
+            <p class="text-muted">
               Items due for replenishment based on your purchase frequency
             </p>
           </div>
@@ -178,7 +175,7 @@ async function handleAddAllSuggestions() {
           <UButton
             color="warning"
             variant="solid"
-            size="xs"
+            size="md"
             class="hidden sm:inline-flex"
             @click="handleAddAllSuggestions"
           >
@@ -188,7 +185,7 @@ async function handleAddAllSuggestions() {
           <UButton
             color="warning"
             variant="ghost"
-            size="xs"
+            size="md"
             :icon="showSuggestions ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
             :title="showSuggestions ? 'Collapse' : 'Expand'"
             :aria-label="showSuggestions ? 'Collapse suggestions' : 'Expand suggestions'"
@@ -198,12 +195,13 @@ async function handleAddAllSuggestions() {
       </div>
 
       <!-- Suggestions Carousel -->
-      <div v-if="showSuggestions" class="mt-3 pt-3 border-t border-amber-200/50 space-y-2">
+      <div v-if="showSuggestions" class="mt-3 pt-3 border-t border-warning/30 space-y-2">
         <div class="sm:hidden mb-2">
           <UButton
             color="warning"
             variant="solid"
             block
+            size="md"
             @click="handleAddAllSuggestions"
           >
             <span>Add All ({{ store.suggestions.length }}) Due Items</span>
@@ -215,35 +213,32 @@ async function handleAddAllSuggestions() {
           <div
             v-for="sug in store.suggestions"
             :key="sug.item.id"
-            class="bg-white/90 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between shadow-2xs"
+            class="bg-default/90 border border-default rounded-xl p-3 flex items-center justify-between shadow-2xs"
           >
             <div class="min-w-0 pr-2">
-              <div class="font-semibold text-slate-800 text-xs truncate">
+              <div class="font-semibold text-highlighted truncate">
                 {{ sug.item.name }}
               </div>
-              <div class="flex items-center space-x-1 text-[10px] text-amber-700 font-medium">
+              <div class="flex items-center space-x-1.5 text-muted font-medium mt-1">
                 <UBadge
                   :color="sug.urgency === 'critical' ? 'error' : 'warning'"
                   variant="subtle"
-                  size="xs"
-                  class="font-bold rounded-md"
+                  size="md"
                 >
                   {{ sug.reason }}
                 </UBadge>
-                <span class="text-slate-400">• {{ sug.item.frequencyLabel }}</span>
+                <span class="text-dimmed">• {{ sug.item.frequencyLabel }}</span>
               </div>
             </div>
 
             <UButton
               color="primary"
               variant="subtle"
-              size="xs"
+              size="md"
               icon="i-lucide-plus"
-              class="shrink-0 font-semibold"
+              label="Add"
               @click="store.addToShoppingList({ nameOrId: sug.item.id, quantity: 1 })"
-            >
-              Add
-            </UButton>
+            />
           </div>
         </div>
       </div>
@@ -253,18 +248,17 @@ async function handleAddAllSuggestions() {
     <div class="space-y-3">
       <div class="flex items-center justify-between px-1">
         <div class="flex items-center space-x-2">
-          <h2 class="text-base font-bold text-slate-900">Next Shop List</h2>
+          <h2 class="font-bold text-highlighted">Next Shop List</h2>
           <UBadge
             color="neutral"
             variant="subtle"
-            size="sm"
-            class="rounded-full font-semibold"
+            size="md"
           >
             {{ store.shoppingList.length }} items
           </UBadge>
         </div>
 
-        <div class="text-xs text-slate-500 hidden sm:block">
+        <div class="text-muted hidden sm:block">
           Tick off = in-stock + reset timer • Delete = didn't buy
         </div>
       </div>
@@ -272,14 +266,14 @@ async function handleAddAllSuggestions() {
       <!-- Empty State -->
       <div
         v-if="store.shoppingList.length === 0"
-        class="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3"
+        class="bg-default rounded-2xl border border-default p-8 text-center space-y-3"
       >
-        <div class="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center">
+        <div class="w-14 h-14 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center">
           <UIcon name="i-lucide-shopping-bag" class="w-7 h-7" />
         </div>
         <div>
-          <h3 class="text-base font-bold text-slate-800">Your shopping list is clear!</h3>
-          <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+          <h3 class="font-bold text-highlighted">Your shopping list is clear!</h3>
+          <p class="text-muted mt-1 max-w-sm mx-auto">
             All pantry items are stocked, or you're ready to plan your next shop. Use the input bar above or select from Cadence Suggestions.
           </p>
         </div>
@@ -287,6 +281,7 @@ async function handleAddAllSuggestions() {
           v-if="store.suggestions.length > 0"
           color="warning"
           variant="solid"
+          size="md"
           icon="i-lucide-sparkles"
           @click="handleAddAllSuggestions"
         >
@@ -299,40 +294,38 @@ async function handleAddAllSuggestions() {
         <div
           v-for="item in store.shoppingList"
           :key="item.id"
-          class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-xs hover:border-slate-300 transition-all flex items-center justify-between gap-3 group"
+          class="bg-default rounded-2xl border border-default p-3.5 shadow-xs hover:border-accented transition-all flex items-center justify-between gap-3 group"
         >
           <!-- Left: Interactive Tick Circle -->
           <div class="flex items-center space-x-3 min-w-0">
             <UButton
-              color="success"
+              color="primary"
               variant="outline"
-              size="sm"
+              size="md"
               icon="i-lucide-check"
               title="Tick off (Bought - reset cadence & mark in stock)"
               aria-label="Tick off (Bought - reset cadence & mark in stock)"
-              class="w-8 h-8 rounded-full border-2 border-emerald-500 text-transparent hover:text-white hover:bg-emerald-500 p-0 justify-center transition-all active:scale-90 shrink-0"
+              class="rounded-full shrink-0"
               @click="store.checkOffShoppingItem(item)"
             />
 
             <div class="min-w-0">
               <div class="flex items-center space-x-2">
-                <span class="font-bold text-slate-900 text-sm truncate">{{ item.name }}</span>
+                <span class="font-bold text-highlighted truncate">{{ item.name }}</span>
                 <UBadge
                   color="neutral"
-                  variant="outline"
-                  size="xs"
-                  class="hidden xs:inline-flex rounded-md font-semibold"
-                  :class="[getCategoryColor(item.category).bg, getCategoryColor(item.category).text, getCategoryColor(item.category).border]"
+                  variant="subtle"
+                  size="md"
                 >
                   {{ item.category }}
                 </UBadge>
               </div>
-              <div class="flex items-center space-x-2 text-xs text-slate-500 mt-0.5">
-                <span class="inline-flex items-center space-x-1 text-[11px] text-slate-400">
-                  <UIcon name="i-lucide-clock" class="w-3 h-3 text-slate-400" />
+              <div class="flex items-center space-x-2 text-muted mt-0.5">
+                <span class="inline-flex items-center space-x-1 text-dimmed">
+                  <UIcon name="i-lucide-clock" class="w-3.5 h-3.5 text-dimmed" />
                   <span>{{ item.frequencyLabel }}</span>
                 </span>
-                <span v-if="item.notes" class="text-[11px] text-slate-400 truncate">• {{ item.notes }}</span>
+                <span v-if="item.notes" class="text-dimmed truncate">• {{ item.notes }}</span>
               </div>
             </div>
           </div>
@@ -340,10 +333,11 @@ async function handleAddAllSuggestions() {
           <!-- Right: Quantity Controls & Delete ("Didn't buy") Button -->
           <div class="flex items-center space-x-2 shrink-0">
             <!-- Quantity Stepper using UFieldGroup, UButton, and UInput -->
-            <UFieldGroup size="xs">
+            <UFieldGroup size="md">
               <UButton
                 color="neutral"
                 variant="subtle"
+                size="md"
                 icon="i-lucide-minus"
                 :disabled="(item.shoppingListQuantity || 1) <= 1"
                 aria-label="Decrease quantity"
@@ -351,15 +345,17 @@ async function handleAddAllSuggestions() {
               />
               <UInput
                 type="number"
+                size="md"
                 :model-value="item.shoppingListQuantity || 1"
                 min="1"
-                class="w-14"
-                :ui="{ base: 'text-center font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none' }"
+                class="w-16"
+                :ui="{ base: 'text-center font-semibold' }"
                 @update:model-value="(val) => store.updateShoppingQuantity(item.id, Math.max(1, Number(val) || 1))"
               />
               <UButton
                 color="neutral"
                 variant="subtle"
+                size="md"
                 icon="i-lucide-plus"
                 aria-label="Increase quantity"
                 @click="store.updateShoppingQuantity(item.id, (item.shoppingListQuantity || 1) + 1)"
@@ -370,11 +366,10 @@ async function handleAddAllSuggestions() {
             <UButton
               color="neutral"
               variant="ghost"
-              size="xs"
+              size="md"
               icon="i-lucide-trash-2"
               title="Didn't buy it (Remove from list without resetting cadence)"
               aria-label="Didn't buy it"
-              class="text-slate-400 hover:text-rose-600 hover:bg-rose-50"
               @click="store.deleteFromShoppingList(item)"
             />
           </div>
@@ -383,23 +378,23 @@ async function handleAddAllSuggestions() {
     </div>
 
     <!-- Purchased This Trip (Session History) -->
-    <div v-if="store.sessionPurchased.length > 0" class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mt-6">
+    <div v-if="store.sessionPurchased.length > 0" class="bg-muted border border-default rounded-2xl p-4 mt-6">
       <div class="flex items-center justify-between mb-2">
-        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
-          <UIcon name="i-lucide-check" class="w-3.5 h-3.5 text-emerald-600" />
+        <h3 class="font-bold text-toned uppercase tracking-wider flex items-center space-x-1.5">
+          <UIcon name="i-lucide-check" class="w-3.5 h-3.5 text-primary" />
           <span>Purchased This Trip ({{ store.sessionPurchased.length }})</span>
         </h3>
         <UButton
           color="neutral"
           variant="link"
-          size="xs"
-          class="text-slate-400 hover:text-slate-600 p-0"
+          size="md"
+          class="text-muted hover:text-highlighted p-0"
           @click="store.clearSessionPurchased()"
         >
           Clear
         </UButton>
       </div>
-      <p class="text-[11px] text-slate-500 mb-2.5">
+      <p class="text-muted mb-2.5">
         These items were marked in-stock in your pantry and their cadence timers have been reset to today.
       </p>
       <div class="flex flex-wrap gap-2">
@@ -408,12 +403,11 @@ async function handleAddAllSuggestions() {
           :key="`${sessionItem.id}-${idx}`"
           color="success"
           variant="subtle"
-          size="sm"
-          class="rounded-lg font-medium gap-1.5"
+          size="md"
+          icon="i-lucide-check"
         >
-          <UIcon name="i-lucide-check" class="w-3 h-3 text-emerald-600" />
           <span class="line-through">{{ sessionItem.name }}</span>
-          <span class="text-[10px] text-emerald-600/70 font-normal">at {{ sessionItem.timestamp }}</span>
+          <span class="opacity-75">at {{ sessionItem.timestamp }}</span>
         </UBadge>
       </div>
     </div>

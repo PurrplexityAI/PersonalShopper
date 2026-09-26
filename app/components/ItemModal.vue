@@ -116,7 +116,7 @@ async function handleSubmit() {
   >
     <template #body>
       <form class="space-y-4" @submit.prevent="handleSubmit">
-        <div v-if="error" class="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start space-x-2 text-rose-700 text-sm">
+        <div v-if="error" class="p-3 bg-error/10 border border-error/20 rounded-xl flex items-start space-x-2 text-error">
           <UIcon name="i-lucide-alert-circle" class="w-4 h-4 mt-0.5 shrink-0" />
           <span>{{ error }}</span>
         </div>
@@ -141,7 +141,7 @@ async function handleSubmit() {
         <UFormField label="Category">
           <template #label>
             <span class="flex items-center space-x-1">
-              <UIcon name="i-lucide-tag" class="w-3.5 h-3.5 text-slate-400" />
+              <UIcon name="i-lucide-tag" class="w-3.5 h-3.5 text-muted" />
               <span>Category</span>
             </span>
           </template>
@@ -163,7 +163,7 @@ async function handleSubmit() {
         <UFormField label="Purchase Cadence (How often to buy)">
           <template #label>
             <span class="flex items-center space-x-1">
-              <UIcon name="i-lucide-calendar" class="w-3.5 h-3.5 text-slate-400" />
+              <UIcon name="i-lucide-calendar" class="w-3.5 h-3.5 text-muted" />
               <span>Purchase Cadence (How often to buy)</span>
             </span>
           </template>
@@ -172,8 +172,8 @@ async function handleSubmit() {
               v-for="preset in CADENCE_PRESETS"
               :key="preset.days"
               type="button"
-              size="xs"
-              class="justify-center rounded-xl font-medium"
+              size="md"
+              class="justify-center"
               :color="!isCustomCadence && frequencyDays === preset.days ? 'primary' : 'neutral'"
               :variant="!isCustomCadence && frequencyDays === preset.days ? 'subtle' : 'outline'"
               @click="() => { isCustomCadence = false; frequencyDays = preset.days; }"
@@ -182,8 +182,8 @@ async function handleSubmit() {
             </UButton>
             <UButton
               type="button"
-              size="xs"
-              class="justify-center rounded-xl font-medium"
+              size="md"
+              class="justify-center"
               :color="isCustomCadence ? 'primary' : 'neutral'"
               :variant="isCustomCadence ? 'subtle' : 'outline'"
               @click="isCustomCadence = true"
@@ -193,7 +193,7 @@ async function handleSubmit() {
           </div>
 
           <div v-if="isCustomCadence" class="flex items-center space-x-2 mt-2">
-            <span class="text-xs text-slate-600">Buy every:</span>
+            <span class="text-toned">Buy every:</span>
             <UInput
               v-model="customDays"
               type="number"
@@ -201,14 +201,14 @@ async function handleSubmit() {
               max="365"
               class="w-24"
             />
-            <span class="text-xs text-slate-600">days</span>
+            <span class="text-toned">days</span>
           </div>
         </UFormField>
 
         <!-- Stock Status & Quantity -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
           <!-- In Stock Toggle -->
-          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+          <div class="bg-muted p-3 rounded-xl border border-default flex items-center justify-between">
             <USwitch
               v-model="inStock"
               label="In Stock"
@@ -241,7 +241,7 @@ async function handleSubmit() {
         <UFormField label="Notes (optional)">
           <template #label>
             <span class="flex items-center space-x-1">
-              <UIcon name="i-lucide-file-text" class="w-3.5 h-3.5 text-slate-400" />
+              <UIcon name="i-lucide-file-text" class="w-3.5 h-3.5 text-muted" />
               <span>Notes (optional)</span>
             </span>
           </template>

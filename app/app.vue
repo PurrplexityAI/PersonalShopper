@@ -18,7 +18,7 @@ onMounted(() => {
 
 <template>
   <UApp>
-    <div class="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div class="min-h-screen bg-muted flex flex-col font-sans">
       <!-- Top Header -->
       <AppHeader />
 
@@ -27,9 +27,9 @@ onMounted(() => {
 
       <!-- Main Content Area -->
       <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-4 sm:py-6">
-        <div v-if="store.isLoading" class="flex flex-col items-center justify-center py-20 space-y-3 text-slate-400">
-          <div class="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-          <p class="text-xs font-medium">Loading your pantry & shopping list...</p>
+        <div v-if="store.isLoading" class="flex flex-col items-center justify-center py-20 space-y-3 text-muted">
+          <div class="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <p class="font-medium">Loading your pantry & shopping list...</p>
         </div>
 
         <template v-else>

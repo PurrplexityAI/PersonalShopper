@@ -4,30 +4,43 @@ import type { ActiveTab } from "~~/shared/types";
 
 const store = usePantryStore();
 
-const tabs = computed(() => [
+interface TabItem {
+  id: ActiveTab;
+  label: string;
+  shortLabel: string;
+  icon: string;
+  badge: number;
+  color: "primary" | "neutral" | "warning";
+  variant: "solid" | "subtle";
+}
+
+const tabs = computed<TabItem[]>(() => [
   {
-    id: "shopping" as ActiveTab,
+    id: "shopping",
     label: "Shopping List",
     shortLabel: "Shop List",
     icon: "i-lucide-shopping-cart",
     badge: store.shoppingList.length,
-    badgeColor: "bg-emerald-600 text-white",
+    color: "primary",
+    variant: "solid",
   },
   {
-    id: "pantry" as ActiveTab,
+    id: "pantry",
     label: "Pantry Inventory",
     shortLabel: "Pantry",
     icon: "i-lucide-package",
     badge: store.totalCount,
-    badgeColor: "bg-slate-200 text-slate-700",
+    color: "neutral",
+    variant: "subtle",
   },
   {
-    id: "suggestions" as ActiveTab,
+    id: "suggestions",
     label: "Cadence Suggestions",
     shortLabel: "Suggestions",
     icon: "i-lucide-sparkles",
     badge: store.suggestions.length,
-    badgeColor: store.suggestions.length > 0 ? "bg-amber-500 text-white animate-pulse-subtle" : "bg-slate-200 text-slate-700",
+    color: store.suggestions.length > 0 ? "warning" : "neutral",
+    variant: store.suggestions.length > 0 ? "solid" : "subtle",
   },
 ]);
 </script>
@@ -35,27 +48,28 @@ const tabs = computed(() => [
 <template>
   <div>
     <!-- Desktop Tabs (Top) -->
-    <nav aria-label="Desktop Navigation" class="hidden sm:block border-b border-slate-200 bg-white shadow-xs">
+    <nav aria-label="Desktop Navigation" class="hidden sm:block border-b border-default bg-default shadow-xs">
       <div class="max-w-5xl mx-auto px-4 flex space-x-2">
         <button
           v-for="tab in tabs"
           :key="tab.id"
           type="button"
-          class="flex items-center space-x-2 py-3 px-4 border-b-2 font-medium text-sm transition-all"
+          class="flex items-center space-x-2 py-3 px-4 border-b-2 font-medium transition-all"
           :class="[
             store.activeTab === tab.id
-              ? 'border-emerald-600 text-emerald-600 font-semibold'
-              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-muted hover:text-highlighted hover:border-accented'
           ]"
           @click="store.activeTab = tab.id"
         >
-          <UIcon :name="tab.icon" class="w-4 h-4" :class="store.activeTab === tab.id ? 'text-emerald-600' : 'text-slate-400'" />
+          <UIcon :name="tab.icon" class="w-4 h-4" :class="store.activeTab === tab.id ? 'text-primary' : 'text-dimmed'" />
           <span>{{ tab.label }}</span>
           <UBadge
             v-if="tab.badge > 0"
-            size="sm"
-            class="ml-1.5 rounded-full font-semibold"
-            :class="tab.badgeColor"
+            :color="tab.color"
+            :variant="tab.variant"
+            size="md"
+            class="ml-1 rounded-full"
           >
             {{ tab.badge }}
           </UBadge>
@@ -64,32 +78,33 @@ const tabs = computed(() => [
     </nav>
 
     <!-- Mobile Bottom Navigation Bar (Fixed) -->
-    <nav aria-label="Mobile Navigation" class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 safe-bottom">
+    <nav aria-label="Mobile Navigation" class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-default/95 backdrop-blur-md border-t border-default safe-bottom">
       <div class="grid grid-cols-3 h-16">
         <button
           v-for="tab in tabs"
           :key="tab.id"
           type="button"
           class="relative flex flex-col items-center justify-center transition-colors"
-          :class="store.activeTab === tab.id ? 'text-emerald-600 font-medium' : 'text-slate-500 hover:text-slate-800'"
+          :class="store.activeTab === tab.id ? 'text-primary font-medium' : 'text-muted hover:text-highlighted'"
           @click="store.activeTab = tab.id"
         >
           <div class="relative">
             <UIcon
               :name="tab.icon"
               class="w-5 h-5 transition-transform"
-              :class="store.activeTab === tab.id ? 'scale-110 text-emerald-600' : 'text-slate-500'"
+              :class="store.activeTab === tab.id ? 'scale-110 text-primary' : 'text-muted'"
             />
             <UBadge
               v-if="tab.badge > 0"
-              size="xs"
-              class="absolute -top-1.5 -right-3 px-1.5 py-0.2 min-w-[18px] text-[10px] leading-tight text-center rounded-full font-bold shadow-xs"
-              :class="tab.badgeColor"
+              :color="tab.color"
+              :variant="tab.variant"
+              size="md"
+              class="absolute -top-1.5 -right-3 rounded-full"
             >
               {{ tab.badge > 99 ? '99+' : tab.badge }}
             </UBadge>
           </div>
-          <span class="text-[11px] mt-1">{{ tab.shortLabel }}</span>
+          <span class="mt-1">{{ tab.shortLabel }}</span>
         </button>
       </div>
     </nav>
