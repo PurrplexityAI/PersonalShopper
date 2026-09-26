@@ -40,6 +40,15 @@ export default withNuxt(
 
       // Enforce TypeScript in component <script> blocks (lang="ts")
       "vue/block-lang": ["error", { script: { lang: "ts" } }],
+
+      // Ban raw Tailwind color utilities and small font sizes in favor of Nuxt UI design tokens
+      "vue/no-restricted-class": [
+        "error",
+        "/^(text|bg|border|ring|outline|divide)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\\d+/",
+        "/^(text|bg|border|ring|outline)-(white|black)/",
+        "text-xs",
+        "text-sm",
+      ],
     },
   },
   {
