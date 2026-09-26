@@ -1,60 +1,60 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { InMemoryPantryRepository } from '~~/server/utils/inMemoryRepository';
+import { describe, it, expect, beforeEach } from "vitest";
+import { InMemoryPantryRepository } from "~~/server/utils/inMemoryRepository";
 
-describe('PantryRepository (Isolated Datastore Tests)', () => {
+describe("PantryRepository (Isolated Datastore Tests)", () => {
   let repo: InMemoryPantryRepository;
 
   beforeEach(() => {
     repo = new InMemoryPantryRepository();
   });
 
-  it('creates pantry items and enforces case-insensitive name uniqueness', async () => {
+  it("creates pantry items and enforces case-insensitive name uniqueness", async () => {
     const item1 = await repo.create({
-      name: 'Organic Sourdough Bread',
-      category: 'Bakery',
+      name: "Organic Sourdough Bread",
+      category: "Bakery",
       inStock: true,
       quantity: 1,
-      unit: 'loaf',
+      unit: "loaf",
       frequencyDays: 7,
     });
 
     expect(item1.id).toBeDefined();
-    expect(item1.name).toBe('Organic Sourdough Bread');
-    expect(item1.frequencyLabel).toBe('Weekly (7d)');
+    expect(item1.name).toBe("Organic Sourdough Bread");
+    expect(item1.frequencyLabel).toBe("Weekly (7d)");
     expect(item1.nextDueDate).toBeDefined();
 
     // Attempting duplicate with different casing should fail
     await expect(
       repo.create({
-        name: 'organic sourdough bread',
-        category: 'Bakery',
+        name: "organic sourdough bread",
+        category: "Bakery",
       })
     ).rejects.toThrow(/already exists/i);
   });
 
-  it('auto-creates non-existent item in pantry when added to shopping list', async () => {
-    const result = await repo.addToShoppingList('Fresh Basil', {
-      category: 'Produce',
+  it("auto-creates non-existent item in pantry when added to shopping list", async () => {
+    const result = await repo.addToShoppingList("Fresh Basil", {
+      category: "Produce",
       quantity: 2,
       frequencyDays: 14,
     });
 
     expect(result.createdInPantry).toBe(true);
-    expect(result.item.name).toBe('Fresh Basil');
+    expect(result.item.name).toBe("Fresh Basil");
     expect(result.item.inShoppingList).toBe(true);
     expect(result.item.shoppingListQuantity).toBe(2);
     expect(result.item.inStock).toBe(false);
 
     // Verify it exists in general pantry items
-    const pantryItem = await repo.findByName('Fresh Basil');
+    const pantryItem = await repo.findByName("Fresh Basil");
     expect(pantryItem).not.toBeNull();
     expect(pantryItem?.inShoppingList).toBe(true);
   });
 
-  it('adds existing pantry item to shopping list without duplicate creation', async () => {
+  it("adds existing pantry item to shopping list without duplicate creation", async () => {
     const existing = await repo.create({
-      name: 'Ground Coffee',
-      category: 'Beverages',
+      name: "Ground Coffee",
+      category: "Beverages",
       inStock: true,
       quantity: 1,
     });
@@ -66,11 +66,11 @@ describe('PantryRepository (Isolated Datastore Tests)', () => {
     expect(result.item.shoppingListQuantity).toBe(3);
   });
 
-  it('ticks off item from shopping list: marks in-stock, resets cadence timer, clears from list', async () => {
-    const pastDate = '2026-08-01T10:00:00.000Z';
+  it("ticks off item from shopping list: marks in-stock, resets cadence timer, clears from list", async () => {
+    const pastDate = "2026-08-01T10:00:00.000Z";
     const item = await repo.create({
-      name: 'Whole Milk',
-      category: 'Dairy & Eggs',
+      name: "Whole Milk",
+      category: "Dairy & Eggs",
       inStock: false,
       quantity: 0,
       frequencyDays: 7,
@@ -90,11 +90,11 @@ describe('PantryRepository (Isolated Datastore Tests)', () => {
     expect(activeList.some((i) => i.id === item.id)).toBe(false);
   });
 
-  it('deletes from shopping list without resetting cadence or altering pantry inStock status', async () => {
-    const originalDate = '2026-09-01T10:00:00.000Z';
+  it("deletes from shopping list without resetting cadence or altering pantry inStock status", async () => {
+    const originalDate = "2026-09-01T10:00:00.000Z";
     const item = await repo.create({
-      name: 'Avocados',
-      category: 'Produce',
+      name: "Avocados",
+      category: "Produce",
       inStock: false,
       quantity: 0,
       frequencyDays: 5,
@@ -108,10 +108,10 @@ describe('PantryRepository (Isolated Datastore Tests)', () => {
     expect(removed.lastPurchasedAt).toBe(originalDate);
   });
 
-  it('updates shopping quantity accurately', async () => {
+  it("updates shopping quantity accurately", async () => {
     const item = await repo.create({
-      name: 'Butter',
-      category: 'Dairy & Eggs',
+      name: "Butter",
+      category: "Dairy & Eggs",
       inShoppingList: true,
       shoppingListQuantity: 1,
     });
@@ -120,10 +120,10 @@ describe('PantryRepository (Isolated Datastore Tests)', () => {
     expect(updated.shoppingListQuantity).toBe(4);
   });
 
-  it('deletes pantry item completely', async () => {
+  it("deletes pantry item completely", async () => {
     const item = await repo.create({
-      name: 'Paper Towels',
-      category: 'Household',
+      name: "Paper Towels",
+      category: "Household",
     });
 
     const deleted = await repo.delete(item.id);

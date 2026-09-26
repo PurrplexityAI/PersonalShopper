@@ -1,4 +1,4 @@
-import { repository } from '../../utils/db';
+import { repository } from "../../utils/db";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -6,7 +6,8 @@ export default defineEventHandler(async (event) => {
     const { items } = body;
     const result = await repository.importData(items);
     return { success: true, message: `Successfully imported ${result.count} pantry items.` };
-  } catch (err: any) {
-    throw createError({ statusCode: 400, statusMessage: err.message });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw createError({ statusCode: 400, statusMessage: message });
   }
 });

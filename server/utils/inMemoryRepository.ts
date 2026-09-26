@@ -1,14 +1,14 @@
-import crypto from 'crypto';
+import crypto from "crypto";
 import type {
   PantryItem,
   ShoppingSuggestion,
   CreatePantryItemDto,
   UpdatePantryItemDto,
   AddToShoppingListDto,
-} from '~~/shared/types';
-import type { PantryRepository } from './repository';
-import { calculateNextDueDate, getFrequencyLabel, generateSuggestions } from '~~/app/utils/cadence';
-import { getInitialSeedData } from './jsonRepository';
+} from "~~/shared/types";
+import type { PantryRepository } from "./repository";
+import { calculateNextDueDate, getFrequencyLabel, generateSuggestions } from "~~/app/utils/cadence";
+import { getInitialSeedData } from "./jsonRepository";
 
 export class InMemoryPantryRepository implements PantryRepository {
   private items: PantryItem[] = [];
@@ -46,18 +46,18 @@ export class InMemoryPantryRepository implements PantryRepository {
 
   async getCategories(): Promise<string[]> {
     const defaultCategories = [
-      'Dairy & Eggs',
-      'Produce',
-      'Bakery',
-      'Meat & Seafood',
-      'Pantry Staples',
-      'Beverages',
-      'Snacks',
-      'Condiments & Spices',
-      'Frozen',
-      'Household',
-      'Personal Care',
-      'General',
+      "Dairy & Eggs",
+      "Produce",
+      "Bakery",
+      "Meat & Seafood",
+      "Pantry Staples",
+      "Beverages",
+      "Snacks",
+      "Condiments & Spices",
+      "Frozen",
+      "Household",
+      "Personal Care",
+      "General",
     ];
     const itemCategories = this.items.map((i) => i.category);
     return Array.from(new Set([...defaultCategories, ...itemCategories])).filter(Boolean).sort();
@@ -66,7 +66,7 @@ export class InMemoryPantryRepository implements PantryRepository {
   async create(data: CreatePantryItemDto): Promise<PantryItem> {
     const trimmedName = data.name.trim();
     if (!trimmedName) {
-      throw new Error('Item name is required');
+      throw new Error("Item name is required");
     }
 
     const existing = await this.findByName(trimmedName);
@@ -83,17 +83,17 @@ export class InMemoryPantryRepository implements PantryRepository {
     const newItem: PantryItem = {
       id: crypto.randomUUID(),
       name: trimmedName,
-      category: data.category?.trim() || 'General',
+      category: data.category?.trim() || "General",
       inStock: data.inStock ?? true,
       quantity: data.quantity ?? 1,
-      unit: data.unit?.trim() || 'items',
+      unit: data.unit?.trim() || "items",
       frequencyDays,
       frequencyLabel,
       lastPurchasedAt,
       nextDueDate,
       inShoppingList: data.inShoppingList ?? false,
       shoppingListQuantity: data.shoppingListQuantity ?? 1,
-      notes: data.notes?.trim() || '',
+      notes: data.notes?.trim() || "",
       createdAt: now,
       updatedAt: now,
     };
@@ -164,10 +164,10 @@ export class InMemoryPantryRepository implements PantryRepository {
 
     const newItem = await this.create({
       name: nameOrId,
-      category: options?.category || 'General',
+      category: options?.category || "General",
       inStock: false,
       quantity: 0,
-      unit: options?.unit || 'items',
+      unit: options?.unit || "items",
       frequencyDays: options?.frequencyDays ?? 7,
       inShoppingList: true,
       shoppingListQuantity: options?.quantity ?? 1,
@@ -206,7 +206,7 @@ export class InMemoryPantryRepository implements PantryRepository {
 
   async updateShoppingQuantity(id: string, quantity: number): Promise<PantryItem> {
     if (!quantity || quantity < 1) {
-      throw new Error('Valid quantity is required');
+      throw new Error("Valid quantity is required");
     }
     return this.update(id, { shoppingListQuantity: quantity });
   }
@@ -236,14 +236,14 @@ export class InMemoryPantryRepository implements PantryRepository {
 
   async importData(incomingItems: PantryItem[]): Promise<{ count: number }> {
     if (!Array.isArray(incomingItems)) {
-      throw new Error('Invalid import data: Expected an array of pantry items.');
+      throw new Error("Invalid import data: Expected an array of pantry items.");
     }
 
     const validItems: PantryItem[] = [];
     const seenNames = new Set<string>();
 
     for (const raw of incomingItems) {
-      if (!raw.name || typeof raw.name !== 'string') continue;
+      if (!raw.name || typeof raw.name !== "string") continue;
       const normalized = this.normalizeName(raw.name);
       if (seenNames.has(normalized)) continue;
       seenNames.add(normalized);
@@ -255,17 +255,17 @@ export class InMemoryPantryRepository implements PantryRepository {
       validItems.push({
         id: raw.id || crypto.randomUUID(),
         name: raw.name.trim(),
-        category: raw.category?.trim() || 'General',
+        category: raw.category?.trim() || "General",
         inStock: Boolean(raw.inStock),
         quantity: Number(raw.quantity) >= 0 ? Number(raw.quantity) : 1,
-        unit: raw.unit?.trim() || 'items',
+        unit: raw.unit?.trim() || "items",
         frequencyDays,
         frequencyLabel,
         lastPurchasedAt: raw.lastPurchasedAt || null,
         nextDueDate,
         inShoppingList: Boolean(raw.inShoppingList),
         shoppingListQuantity: Number(raw.shoppingListQuantity) > 0 ? Number(raw.shoppingListQuantity) : 1,
-        notes: raw.notes || '',
+        notes: raw.notes || "",
         createdAt: raw.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });

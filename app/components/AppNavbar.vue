@@ -1,33 +1,33 @@
 <script setup lang="ts">
-import { usePantryStore } from '~~/app/stores/pantry';
-import type { ActiveTab } from '~~/shared/types';
+import { usePantryStore } from "~~/app/stores/pantry";
+import type { ActiveTab } from "~~/shared/types";
 
 const store = usePantryStore();
 
 const tabs = computed(() => [
   {
-    id: 'shopping' as ActiveTab,
-    label: 'Shopping List',
-    shortLabel: 'Shop List',
-    icon: 'i-lucide-shopping-cart',
+    id: "shopping" as ActiveTab,
+    label: "Shopping List",
+    shortLabel: "Shop List",
+    icon: "i-lucide-shopping-cart",
     badge: store.shoppingList.length,
-    badgeColor: 'bg-emerald-600 text-white',
+    badgeColor: "bg-emerald-600 text-white",
   },
   {
-    id: 'pantry' as ActiveTab,
-    label: 'Pantry Inventory',
-    shortLabel: 'Pantry',
-    icon: 'i-lucide-package',
+    id: "pantry" as ActiveTab,
+    label: "Pantry Inventory",
+    shortLabel: "Pantry",
+    icon: "i-lucide-package",
     badge: store.totalCount,
-    badgeColor: 'bg-slate-200 text-slate-700',
+    badgeColor: "bg-slate-200 text-slate-700",
   },
   {
-    id: 'suggestions' as ActiveTab,
-    label: 'Cadence Suggestions',
-    shortLabel: 'Suggestions',
-    icon: 'i-lucide-sparkles',
+    id: "suggestions" as ActiveTab,
+    label: "Cadence Suggestions",
+    shortLabel: "Suggestions",
+    icon: "i-lucide-sparkles",
     badge: store.suggestions.length,
-    badgeColor: store.suggestions.length > 0 ? 'bg-amber-500 text-white animate-pulse-subtle' : 'bg-slate-200 text-slate-700',
+    badgeColor: store.suggestions.length > 0 ? "bg-amber-500 text-white animate-pulse-subtle" : "bg-slate-200 text-slate-700",
   },
 ]);
 </script>

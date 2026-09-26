@@ -1,20 +1,20 @@
-import type { PantryItem, ShoppingSuggestion, UrgencyLevel } from '~~/shared/types';
+import type { PantryItem, ShoppingSuggestion, UrgencyLevel } from "~~/shared/types";
 
 /**
  * Returns a human-friendly label for a given frequency in days.
  */
 export function getFrequencyLabel(frequencyDays: number): string {
-  if (frequencyDays <= 0) return 'No cadence';
-  if (frequencyDays === 1) return 'Daily';
-  if (frequencyDays === 2) return 'Every 2 days';
-  if (frequencyDays === 3) return 'Every 3 days';
-  if (frequencyDays === 7) return 'Weekly (7d)';
-  if (frequencyDays === 10) return 'Every 10 days';
-  if (frequencyDays === 14) return 'Every 2 weeks (14d)';
-  if (frequencyDays === 21) return 'Every 3 weeks (21d)';
-  if (frequencyDays === 30) return 'Monthly (30d)';
-  if (frequencyDays === 60) return 'Every 2 months';
-  if (frequencyDays === 90) return 'Quarterly';
+  if (frequencyDays <= 0) return "No cadence";
+  if (frequencyDays === 1) return "Daily";
+  if (frequencyDays === 2) return "Every 2 days";
+  if (frequencyDays === 3) return "Every 3 days";
+  if (frequencyDays === 7) return "Weekly (7d)";
+  if (frequencyDays === 10) return "Every 10 days";
+  if (frequencyDays === 14) return "Every 2 weeks (14d)";
+  if (frequencyDays === 21) return "Every 3 weeks (21d)";
+  if (frequencyDays === 30) return "Monthly (30d)";
+  if (frequencyDays === 60) return "Every 2 months";
+  if (frequencyDays === 90) return "Quarterly";
   return `Every ${frequencyDays} days`;
 }
 
@@ -46,8 +46,8 @@ export function evaluateItemCadence(
   if (!item.inStock) {
     return {
       isDue: true,
-      reason: 'Out of stock in pantry',
-      urgency: 'critical',
+      reason: "Out of stock in pantry",
+      urgency: "critical",
       daysRemaining: -999,
     };
   }
@@ -56,8 +56,8 @@ export function evaluateItemCadence(
   if (!item.frequencyDays || item.frequencyDays <= 0 || !item.nextDueDate) {
     return {
       isDue: false,
-      reason: 'In stock',
-      urgency: 'low',
+      reason: "In stock",
+      urgency: "low",
       daysRemaining: 999,
     };
   }
@@ -71,8 +71,8 @@ export function evaluateItemCadence(
     const overdueCount = Math.abs(diffDays);
     return {
       isDue: true,
-      reason: `Overdue by ${overdueCount} day${overdueCount === 1 ? '' : 's'}`,
-      urgency: overdueCount > 2 ? 'critical' : 'high',
+      reason: `Overdue by ${overdueCount} day${overdueCount === 1 ? "" : "s"}`,
+      urgency: overdueCount > 2 ? "critical" : "high",
       daysRemaining: diffDays,
     };
   }
@@ -80,8 +80,8 @@ export function evaluateItemCadence(
   if (diffDays === 0) {
     return {
       isDue: true,
-      reason: 'Cadence due today',
-      urgency: 'high',
+      reason: "Cadence due today",
+      urgency: "high",
       daysRemaining: 0,
     };
   }
@@ -89,8 +89,8 @@ export function evaluateItemCadence(
   if (diffDays === 1) {
     return {
       isDue: true,
-      reason: 'Due tomorrow',
-      urgency: 'medium',
+      reason: "Due tomorrow",
+      urgency: "medium",
       daysRemaining: 1,
     };
   }
@@ -100,7 +100,7 @@ export function evaluateItemCadence(
     return {
       isDue: true,
       reason: `Due in ${diffDays} days`,
-      urgency: 'low',
+      urgency: "low",
       daysRemaining: diffDays,
     };
   }
@@ -108,7 +108,7 @@ export function evaluateItemCadence(
   return {
     isDue: false,
     reason: `In stock (Due in ${diffDays} days)`,
-    urgency: 'low',
+    urgency: "low",
     daysRemaining: diffDays,
   };
 }

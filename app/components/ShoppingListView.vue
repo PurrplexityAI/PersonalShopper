@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { usePantryStore } from '~~/app/stores/pantry';
-import type { PantryItem } from '~~/shared/types';
-import { getCategoryColor } from '~~/app/utils/format';
+import { ref, computed } from "vue";
+import { usePantryStore } from "~~/app/stores/pantry";
+import type { PantryItem } from "~~/shared/types";
+import { getCategoryColor } from "~~/app/utils/format";
 
 const store = usePantryStore();
 
-const quickInput = ref('');
+const quickInput = ref("");
 const showSuggestions = ref(true);
 const newCadence = ref(7);
-const newCategory = ref('General');
+const newCategory = ref("General");
 const showNewItemPrompt = ref(false);
 
 const trimmedInput = computed(() => quickInput.value.trim().toLowerCase());
@@ -39,13 +39,13 @@ async function handleQuickAdd() {
       category: newCategory.value,
     });
   }
-  quickInput.value = '';
+  quickInput.value = "";
   showNewItemPrompt.value = false;
 }
 
 async function handleSelectExisting(item: PantryItem) {
   await store.addToShoppingList({ nameOrId: item.id, quantity: 1 });
-  quickInput.value = '';
+  quickInput.value = "";
   showNewItemPrompt.value = false;
 }
 
@@ -69,7 +69,7 @@ async function handleAddAllSuggestions() {
             placeholder="Add item to shopping list (e.g. Milk, Apples, Bread)..."
             class="w-full pl-3.5 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all"
             @input="showNewItemPrompt = true"
-          />
+          >
         </div>
         <UButton
           type="submit"

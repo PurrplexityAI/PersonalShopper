@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { usePantryStore } from '~~/app/stores/pantry';
+import { ref } from "vue";
+import { usePantryStore } from "~~/app/stores/pantry";
 
 const store = usePantryStore();
 
@@ -14,9 +14,9 @@ async function handleExport() {
     loading.value = true;
     error.value = null;
     await store.exportData();
-    message.value = 'Pantry inventory exported successfully!';
-  } catch (err: any) {
-    error.value = err.message || 'Export failed';
+    message.value = "Pantry inventory exported successfully!";
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "Export failed";
   } finally {
     loading.value = false;
   }
@@ -34,15 +34,15 @@ async function handleImportFile(e: Event) {
     const parsed = JSON.parse(text);
     const items = Array.isArray(parsed) ? parsed : parsed.items;
     if (!Array.isArray(items)) {
-      throw new Error('Invalid JSON format: Expected array of items.');
+      throw new Error("Invalid JSON format: Expected array of items.");
     }
     const msg = await store.importData(items);
     message.value = msg;
-  } catch (err: any) {
-    error.value = err.message || 'Import failed. Check file format.';
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "Import failed. Check file format.";
   } finally {
     loading.value = false;
-    if (fileInputRef.value) fileInputRef.value.value = '';
+    if (fileInputRef.value) fileInputRef.value.value = "";
   }
 }
 
@@ -51,9 +51,9 @@ async function handleResetSample() {
     loading.value = true;
     error.value = null;
     await store.resetSampleData();
-    message.value = 'Reset to sample pantry items successfully.';
-  } catch (err: any) {
-    error.value = err.message || 'Failed to reset data';
+    message.value = "Reset to sample pantry items successfully.";
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "Failed to reset data";
   } finally {
     loading.value = false;
   }
@@ -130,7 +130,7 @@ async function handleResetSample() {
             accept=".json"
             class="hidden"
             @change="handleImportFile"
-          />
+          >
         </div>
 
         <!-- Reset to Samples -->

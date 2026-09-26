@@ -16,7 +16,7 @@ export interface PantryItem {
   updatedAt: string;
 }
 
-export type UrgencyLevel = 'critical' | 'high' | 'medium' | 'low';
+export type UrgencyLevel = "critical" | "high" | "medium" | "low";
 
 export interface ShoppingSuggestion {
   item: PantryItem;
@@ -25,9 +25,9 @@ export interface ShoppingSuggestion {
   daysRemaining: number; // Negative if overdue, 0 if due today, positive if due soon
 }
 
-export type ActiveTab = 'shopping' | 'pantry' | 'suggestions';
+export type ActiveTab = "shopping" | "pantry" | "suggestions";
 
-export type StockFilter = 'all' | 'in-stock' | 'out-of-stock' | 'due';
+export type StockFilter = "all" | "in-stock" | "out-of-stock" | "due";
 
 export interface CreatePantryItemDto {
   name: string;
@@ -42,7 +42,7 @@ export interface CreatePantryItemDto {
   notes?: string;
 }
 
-export interface UpdatePantryItemDto extends Partial<CreatePantryItemDto> {}
+export type UpdatePantryItemDto = Partial<CreatePantryItemDto>;
 
 export interface AddToShoppingListDto {
   quantity?: number;

@@ -1,135 +1,135 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
 import {
   getFrequencyLabel,
   calculateNextDueDate,
   evaluateItemCadence,
   generateSuggestions,
-} from '~~/app/utils/cadence';
-import type { PantryItem } from '~~/shared/types';
+} from "~~/app/utils/cadence";
+import type { PantryItem } from "~~/shared/types";
 
-describe('Cadence Calculation Engine', () => {
-  it('formats cadence frequency labels correctly', () => {
-    expect(getFrequencyLabel(1)).toBe('Daily');
-    expect(getFrequencyLabel(3)).toBe('Every 3 days');
-    expect(getFrequencyLabel(7)).toBe('Weekly (7d)');
-    expect(getFrequencyLabel(14)).toBe('Every 2 weeks (14d)');
-    expect(getFrequencyLabel(21)).toBe('Every 3 weeks (21d)');
-    expect(getFrequencyLabel(30)).toBe('Monthly (30d)');
-    expect(getFrequencyLabel(45)).toBe('Every 45 days');
+describe("Cadence Calculation Engine", () => {
+  it("formats cadence frequency labels correctly", () => {
+    expect(getFrequencyLabel(1)).toBe("Daily");
+    expect(getFrequencyLabel(3)).toBe("Every 3 days");
+    expect(getFrequencyLabel(7)).toBe("Weekly (7d)");
+    expect(getFrequencyLabel(14)).toBe("Every 2 weeks (14d)");
+    expect(getFrequencyLabel(21)).toBe("Every 3 weeks (21d)");
+    expect(getFrequencyLabel(30)).toBe("Monthly (30d)");
+    expect(getFrequencyLabel(45)).toBe("Every 45 days");
   });
 
-  it('calculates next due date properly from last purchase date', () => {
-    const baseDate = '2026-09-01T12:00:00.000Z';
+  it("calculates next due date properly from last purchase date", () => {
+    const baseDate = "2026-09-01T12:00:00.000Z";
     const due7 = calculateNextDueDate(baseDate, 7);
-    expect(due7).toBe('2026-09-08T12:00:00.000Z');
+    expect(due7).toBe("2026-09-08T12:00:00.000Z");
 
     const due14 = calculateNextDueDate(baseDate, 14);
-    expect(due14).toBe('2026-09-15T12:00:00.000Z');
+    expect(due14).toBe("2026-09-15T12:00:00.000Z");
   });
 
-  it('evaluates item cadence correctly across time horizons', () => {
+  it("evaluates item cadence correctly across time horizons", () => {
     const mockItem: PantryItem = {
-      id: 'test-item-1',
-      name: 'Organic Milk',
-      category: 'Dairy & Eggs',
+      id: "test-item-1",
+      name: "Organic Milk",
+      category: "Dairy & Eggs",
       inStock: true,
       quantity: 1,
-      unit: 'bottle',
+      unit: "bottle",
       frequencyDays: 7,
-      frequencyLabel: 'Weekly (7d)',
-      lastPurchasedAt: '2026-09-01T12:00:00.000Z',
-      nextDueDate: '2026-09-08T12:00:00.000Z',
+      frequencyLabel: "Weekly (7d)",
+      lastPurchasedAt: "2026-09-01T12:00:00.000Z",
+      nextDueDate: "2026-09-08T12:00:00.000Z",
       inShoppingList: false,
       shoppingListQuantity: 1,
-      createdAt: '2026-09-01T12:00:00.000Z',
-      updatedAt: '2026-09-01T12:00:00.000Z',
+      createdAt: "2026-09-01T12:00:00.000Z",
+      updatedAt: "2026-09-01T12:00:00.000Z",
     };
 
     // Case 1: Checked 3 days before due -> not due
-    const evalBefore = evaluateItemCadence(mockItem, new Date('2026-09-05T12:00:00.000Z'));
+    const evalBefore = evaluateItemCadence(mockItem, new Date("2026-09-05T12:00:00.000Z"));
     expect(evalBefore.isDue).toBe(false);
 
     // Case 2: Checked on due date -> due today, high urgency
-    const evalDue = evaluateItemCadence(mockItem, new Date('2026-09-08T12:00:00.000Z'));
+    const evalDue = evaluateItemCadence(mockItem, new Date("2026-09-08T12:00:00.000Z"));
     expect(evalDue.isDue).toBe(true);
-    expect(evalDue.urgency).toBe('high');
+    expect(evalDue.urgency).toBe("high");
     expect(evalDue.daysRemaining).toBe(0);
 
     // Case 3: Checked 2 days overdue -> overdue, high/critical urgency
-    const evalOverdue = evaluateItemCadence(mockItem, new Date('2026-09-10T12:00:00.000Z'));
+    const evalOverdue = evaluateItemCadence(mockItem, new Date("2026-09-10T12:00:00.000Z"));
     expect(evalOverdue.isDue).toBe(true);
-    expect(evalOverdue.reason).toContain('Overdue by 2 days');
+    expect(evalOverdue.reason).toContain("Overdue by 2 days");
 
     // Case 4: Out of stock -> always critical
     const outOfStockItem: PantryItem = {
       ...mockItem,
       inStock: false,
     };
-    const evalOOS = evaluateItemCadence(outOfStockItem, new Date('2026-09-02T12:00:00.000Z'));
+    const evalOOS = evaluateItemCadence(outOfStockItem, new Date("2026-09-02T12:00:00.000Z"));
     expect(evalOOS.isDue).toBe(true);
-    expect(evalOOS.urgency).toBe('critical');
-    expect(evalOOS.reason).toBe('Out of stock in pantry');
+    expect(evalOOS.urgency).toBe("critical");
+    expect(evalOOS.reason).toBe("Out of stock in pantry");
   });
 
-  it('ranks suggestions by urgency and excludes items already on shopping list', () => {
+  it("ranks suggestions by urgency and excludes items already on shopping list", () => {
     const item1: PantryItem = {
-      id: 'i1',
-      name: 'Item 1 (In Stock, Due Today)',
-      category: 'General',
+      id: "i1",
+      name: "Item 1 (In Stock, Due Today)",
+      category: "General",
       inStock: true,
       quantity: 1,
-      unit: 'items',
+      unit: "items",
       frequencyDays: 7,
-      frequencyLabel: 'Weekly (7d)',
-      lastPurchasedAt: '2026-09-01T12:00:00.000Z',
-      nextDueDate: '2026-09-08T12:00:00.000Z',
+      frequencyLabel: "Weekly (7d)",
+      lastPurchasedAt: "2026-09-01T12:00:00.000Z",
+      nextDueDate: "2026-09-08T12:00:00.000Z",
       inShoppingList: false,
       shoppingListQuantity: 1,
-      createdAt: '2026-09-01T12:00:00.000Z',
-      updatedAt: '2026-09-01T12:00:00.000Z',
+      createdAt: "2026-09-01T12:00:00.000Z",
+      updatedAt: "2026-09-01T12:00:00.000Z",
     };
 
     const item2: PantryItem = {
-      id: 'i2',
-      name: 'Item 2 (Out of stock)',
-      category: 'General',
+      id: "i2",
+      name: "Item 2 (Out of stock)",
+      category: "General",
       inStock: false,
       quantity: 0,
-      unit: 'items',
+      unit: "items",
       frequencyDays: 14,
-      frequencyLabel: 'Every 2 weeks',
+      frequencyLabel: "Every 2 weeks",
       lastPurchasedAt: null,
       nextDueDate: null,
       inShoppingList: false,
       shoppingListQuantity: 1,
-      createdAt: '2026-09-01T12:00:00.000Z',
-      updatedAt: '2026-09-01T12:00:00.000Z',
+      createdAt: "2026-09-01T12:00:00.000Z",
+      updatedAt: "2026-09-01T12:00:00.000Z",
     };
 
     const item3: PantryItem = {
-      id: 'i3',
-      name: 'Item 3 (Already on Shopping List)',
-      category: 'General',
+      id: "i3",
+      name: "Item 3 (Already on Shopping List)",
+      category: "General",
       inStock: false,
       quantity: 0,
-      unit: 'items',
+      unit: "items",
       frequencyDays: 7,
-      frequencyLabel: 'Weekly',
+      frequencyLabel: "Weekly",
       lastPurchasedAt: null,
       nextDueDate: null,
       inShoppingList: true, // Should be omitted!
       shoppingListQuantity: 1,
-      createdAt: '2026-09-01T12:00:00.000Z',
-      updatedAt: '2026-09-01T12:00:00.000Z',
+      createdAt: "2026-09-01T12:00:00.000Z",
+      updatedAt: "2026-09-01T12:00:00.000Z",
     };
 
-    const suggestions = generateSuggestions([item1, item2, item3], new Date('2026-09-08T12:00:00.000Z'));
+    const suggestions = generateSuggestions([item1, item2, item3], new Date("2026-09-08T12:00:00.000Z"));
     expect(suggestions.length).toBe(2);
     // Critical (Item 2) must be first
-    expect(suggestions[0].item.id).toBe('i2');
-    expect(suggestions[0].urgency).toBe('critical');
+    expect(suggestions[0].item.id).toBe("i2");
+    expect(suggestions[0].urgency).toBe("critical");
     // High (Item 1) must be second
-    expect(suggestions[1].item.id).toBe('i1');
-    expect(suggestions[1].urgency).toBe('high');
+    expect(suggestions[1].item.id).toBe("i1");
+    expect(suggestions[1].urgency).toBe("high");
   });
 });

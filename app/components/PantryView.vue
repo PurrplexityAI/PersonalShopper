@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { usePantryStore } from '~~/app/stores/pantry';
-import type { StockFilter } from '~~/shared/types';
-import { formatRelativeDate, getCategoryColor } from '~~/app/utils/format';
+import { usePantryStore } from "~~/app/stores/pantry";
+import type { PantryItem } from "~~/shared/types";
+import { formatRelativeDate, getCategoryColor } from "~~/app/utils/format";
 
 const store = usePantryStore();
 
 const now = new Date();
 
-function getItemCadenceInfo(item: any) {
+function getItemCadenceInfo(item: PantryItem) {
   let isOverdue = false;
   let isDueSoon = false;
   let daysDiff = 0;
@@ -35,7 +35,7 @@ function getItemCadenceInfo(item: any) {
           type="text"
           placeholder="Search pantry by name, category..."
           class="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all bg-slate-50/50 focus:bg-white"
-        />
+        >
         <button
           v-if="store.searchQuery"
           type="button"

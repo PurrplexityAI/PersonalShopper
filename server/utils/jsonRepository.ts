@@ -1,116 +1,116 @@
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
 import type {
   PantryItem,
   ShoppingSuggestion,
   CreatePantryItemDto,
   UpdatePantryItemDto,
   AddToShoppingListDto,
-} from '~~/shared/types';
-import type { PantryRepository } from './repository';
-import { calculateNextDueDate, getFrequencyLabel, generateSuggestions } from '~~/app/utils/cadence';
+} from "~~/shared/types";
+import type { PantryRepository } from "./repository";
+import { calculateNextDueDate, getFrequencyLabel, generateSuggestions } from "~~/app/utils/cadence";
 
 export function getInitialSeedData(): PantryItem[] {
   const now = new Date();
   const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
 
-  const seed: Array<Omit<PantryItem, 'id' | 'createdAt' | 'updatedAt' | 'frequencyLabel' | 'nextDueDate'>> = [
+  const seed: Array<Omit<PantryItem, "id" | "createdAt" | "updatedAt" | "frequencyLabel" | "nextDueDate">> = [
     {
-      name: 'Whole Milk (2L)',
-      category: 'Dairy & Eggs',
+      name: "Whole Milk (2L)",
+      category: "Dairy & Eggs",
       inStock: true,
       quantity: 1,
-      unit: 'bottle',
+      unit: "bottle",
       frequencyDays: 7,
       lastPurchasedAt: daysAgo(6),
       inShoppingList: false,
       shoppingListQuantity: 1,
-      notes: 'Organic preferred',
+      notes: "Organic preferred",
     },
     {
-      name: 'Free Range Eggs (Dozen)',
-      category: 'Dairy & Eggs',
+      name: "Free Range Eggs (Dozen)",
+      category: "Dairy & Eggs",
       inStock: true,
       quantity: 1,
-      unit: 'carton',
+      unit: "carton",
       frequencyDays: 14,
       lastPurchasedAt: daysAgo(5),
       inShoppingList: false,
       shoppingListQuantity: 1,
     },
     {
-      name: 'Sourdough Sliced Bread',
-      category: 'Bakery',
+      name: "Sourdough Sliced Bread",
+      category: "Bakery",
       inStock: false,
       quantity: 0,
-      unit: 'loaf',
+      unit: "loaf",
       frequencyDays: 5,
       lastPurchasedAt: daysAgo(6),
       inShoppingList: true,
       shoppingListQuantity: 1,
     },
     {
-      name: 'Bananas',
-      category: 'Produce',
+      name: "Bananas",
+      category: "Produce",
       inStock: true,
       quantity: 1,
-      unit: 'bunch',
+      unit: "bunch",
       frequencyDays: 6,
       lastPurchasedAt: daysAgo(6),
       inShoppingList: false,
       shoppingListQuantity: 1,
     },
     {
-      name: 'Extra Virgin Olive Oil',
-      category: 'Pantry Staples',
+      name: "Extra Virgin Olive Oil",
+      category: "Pantry Staples",
       inStock: true,
       quantity: 1,
-      unit: 'bottle',
+      unit: "bottle",
       frequencyDays: 30,
       lastPurchasedAt: daysAgo(10),
       inShoppingList: false,
       shoppingListQuantity: 1,
     },
     {
-      name: 'Ground Espresso Coffee',
-      category: 'Beverages',
+      name: "Ground Espresso Coffee",
+      category: "Beverages",
       inStock: true,
       quantity: 2,
-      unit: 'bags',
+      unit: "bags",
       frequencyDays: 14,
       lastPurchasedAt: daysAgo(15),
       inShoppingList: false,
       shoppingListQuantity: 1,
     },
     {
-      name: 'Rolled Oats (1kg)',
-      category: 'Pantry Staples',
+      name: "Rolled Oats (1kg)",
+      category: "Pantry Staples",
       inStock: true,
       quantity: 1,
-      unit: 'pack',
+      unit: "pack",
       frequencyDays: 21,
       lastPurchasedAt: daysAgo(12),
       inShoppingList: false,
       shoppingListQuantity: 1,
     },
     {
-      name: 'Unsalted Butter',
-      category: 'Dairy & Eggs',
+      name: "Unsalted Butter",
+      category: "Dairy & Eggs",
       inStock: true,
       quantity: 1,
-      unit: 'block',
+      unit: "block",
       frequencyDays: 14,
       lastPurchasedAt: daysAgo(3),
       inShoppingList: false,
       shoppingListQuantity: 1,
     },
     {
-      name: 'Dishwasher Tablets',
-      category: 'Household',
+      name: "Dishwasher Tablets",
+      category: "Household",
       inStock: true,
       quantity: 1,
-      unit: 'pack',
+      unit: "pack",
       frequencyDays: 30,
       lastPurchasedAt: daysAgo(28),
       inShoppingList: false,
@@ -144,8 +144,8 @@ export class JsonFilePantryRepository implements PantryRepository {
       this.dbFilePath = customPath;
       this.dataDir = path.dirname(customPath);
     } else {
-      this.dataDir = path.resolve(process.cwd(), 'data');
-      this.dbFilePath = path.join(this.dataDir, 'pantry_db.json');
+      this.dataDir = path.resolve(process.cwd(), "data");
+      this.dbFilePath = path.join(this.dataDir, "pantry_db.json");
     }
     this.init();
   }
@@ -157,7 +157,7 @@ export class JsonFilePantryRepository implements PantryRepository {
 
     if (fs.existsSync(this.dbFilePath)) {
       try {
-        const raw = fs.readFileSync(this.dbFilePath, 'utf-8');
+        const raw = fs.readFileSync(this.dbFilePath, "utf-8");
         this.items = JSON.parse(raw);
       } catch {
         const backupFile = path.join(this.dataDir, `pantry_backup_${Date.now()}.json`);
@@ -173,7 +173,7 @@ export class JsonFilePantryRepository implements PantryRepository {
 
   private save() {
     const tmpFile = `${this.dbFilePath}.tmp`;
-    fs.writeFileSync(tmpFile, JSON.stringify(this.items, null, 2), 'utf-8');
+    fs.writeFileSync(tmpFile, JSON.stringify(this.items, null, 2), "utf-8");
     fs.renameSync(tmpFile, this.dbFilePath);
   }
 
@@ -196,18 +196,18 @@ export class JsonFilePantryRepository implements PantryRepository {
 
   async getCategories(): Promise<string[]> {
     const defaultCategories = [
-      'Dairy & Eggs',
-      'Produce',
-      'Bakery',
-      'Meat & Seafood',
-      'Pantry Staples',
-      'Beverages',
-      'Snacks',
-      'Condiments & Spices',
-      'Frozen',
-      'Household',
-      'Personal Care',
-      'General',
+      "Dairy & Eggs",
+      "Produce",
+      "Bakery",
+      "Meat & Seafood",
+      "Pantry Staples",
+      "Beverages",
+      "Snacks",
+      "Condiments & Spices",
+      "Frozen",
+      "Household",
+      "Personal Care",
+      "General",
     ];
     const itemCategories = this.items.map((i) => i.category);
     return Array.from(new Set([...defaultCategories, ...itemCategories])).filter(Boolean).sort();
@@ -216,7 +216,7 @@ export class JsonFilePantryRepository implements PantryRepository {
   async create(data: CreatePantryItemDto): Promise<PantryItem> {
     const trimmedName = data.name.trim();
     if (!trimmedName) {
-      throw new Error('Item name is required');
+      throw new Error("Item name is required");
     }
 
     const existing = await this.findByName(trimmedName);
@@ -233,17 +233,17 @@ export class JsonFilePantryRepository implements PantryRepository {
     const newItem: PantryItem = {
       id: crypto.randomUUID(),
       name: trimmedName,
-      category: data.category?.trim() || 'General',
+      category: data.category?.trim() || "General",
       inStock: data.inStock ?? true,
       quantity: data.quantity ?? 1,
-      unit: data.unit?.trim() || 'items',
+      unit: data.unit?.trim() || "items",
       frequencyDays,
       frequencyLabel,
       lastPurchasedAt,
       nextDueDate,
       inShoppingList: data.inShoppingList ?? false,
       shoppingListQuantity: data.shoppingListQuantity ?? 1,
-      notes: data.notes?.trim() || '',
+      notes: data.notes?.trim() || "",
       createdAt: now,
       updatedAt: now,
     };
@@ -320,10 +320,10 @@ export class JsonFilePantryRepository implements PantryRepository {
 
     const newItem = await this.create({
       name: nameOrId,
-      category: options?.category || 'General',
+      category: options?.category || "General",
       inStock: false,
       quantity: 0,
-      unit: options?.unit || 'items',
+      unit: options?.unit || "items",
       frequencyDays: options?.frequencyDays ?? 7,
       inShoppingList: true,
       shoppingListQuantity: options?.quantity ?? 1,
@@ -362,7 +362,7 @@ export class JsonFilePantryRepository implements PantryRepository {
 
   async updateShoppingQuantity(id: string, quantity: number): Promise<PantryItem> {
     if (!quantity || quantity < 1) {
-      throw new Error('Valid quantity is required');
+      throw new Error("Valid quantity is required");
     }
     return this.update(id, { shoppingListQuantity: quantity });
   }
@@ -392,14 +392,14 @@ export class JsonFilePantryRepository implements PantryRepository {
 
   async importData(incomingItems: PantryItem[]): Promise<{ count: number }> {
     if (!Array.isArray(incomingItems)) {
-      throw new Error('Invalid import data: Expected an array of pantry items.');
+      throw new Error("Invalid import data: Expected an array of pantry items.");
     }
 
     const validItems: PantryItem[] = [];
     const seenNames = new Set<string>();
 
     for (const raw of incomingItems) {
-      if (!raw.name || typeof raw.name !== 'string') continue;
+      if (!raw.name || typeof raw.name !== "string") continue;
       const normalized = this.normalizeName(raw.name);
       if (seenNames.has(normalized)) continue;
       seenNames.add(normalized);
@@ -411,17 +411,17 @@ export class JsonFilePantryRepository implements PantryRepository {
       validItems.push({
         id: raw.id || crypto.randomUUID(),
         name: raw.name.trim(),
-        category: raw.category?.trim() || 'General',
+        category: raw.category?.trim() || "General",
         inStock: Boolean(raw.inStock),
         quantity: Number(raw.quantity) >= 0 ? Number(raw.quantity) : 1,
-        unit: raw.unit?.trim() || 'items',
+        unit: raw.unit?.trim() || "items",
         frequencyDays,
         frequencyLabel,
         lastPurchasedAt: raw.lastPurchasedAt || null,
         nextDueDate,
         inShoppingList: Boolean(raw.inShoppingList),
         shoppingListQuantity: Number(raw.shoppingListQuantity) > 0 ? Number(raw.shoppingListQuantity) : 1,
-        notes: raw.notes || '',
+        notes: raw.notes || "",
         createdAt: raw.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });

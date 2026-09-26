@@ -1,4 +1,4 @@
-import confetti from 'canvas-confetti';
+import confetti from "canvas-confetti";
 
 export function fireShoppingConfetti() {
   try {
@@ -6,7 +6,7 @@ export function fireShoppingConfetti() {
       particleCount: 40,
       spread: 60,
       origin: { y: 0.8 },
-      colors: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'],
+      colors: ["#10b981", "#3b82f6", "#f59e0b", "#ec4899", "#8b5cf6"],
       ticks: 200,
       gravity: 1.2,
       scalar: 0.9,
@@ -27,14 +27,14 @@ export function fireCelebrationConfetti() {
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: ['#10b981', '#6366f1', '#f59e0b'],
+        colors: ["#10b981", "#6366f1", "#f59e0b"],
       });
       confetti({
         particleCount: 3,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: ['#10b981', '#6366f1', '#f59e0b'],
+        colors: ["#10b981", "#6366f1", "#f59e0b"],
       });
 
       if (Date.now() < end) {

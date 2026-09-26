@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { usePantryStore } from '~~/app/stores/pantry';
-import { getCategoryColor } from '~~/app/utils/format';
+import { computed } from "vue";
+import { usePantryStore } from "~~/app/stores/pantry";
+import { getCategoryColor } from "~~/app/utils/format";
 
 const store = usePantryStore();
 
-const criticalItems = computed(() => store.suggestions.filter((s) => s.urgency === 'critical'));
-const highItems = computed(() => store.suggestions.filter((s) => s.urgency === 'high'));
+const criticalItems = computed(() => store.suggestions.filter((s) => s.urgency === "critical"));
+const highItems = computed(() => store.suggestions.filter((s) => s.urgency === "high"));
 const upcomingItems = computed(() =>
-  store.suggestions.filter((s) => s.urgency === 'medium' || s.urgency === 'low')
+  store.suggestions.filter((s) => s.urgency === "medium" || s.urgency === "low")
 );
 
 async function handleAddAll() {

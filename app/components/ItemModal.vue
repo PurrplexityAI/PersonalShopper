@@ -1,30 +1,30 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import { usePantryStore } from '~~/app/stores/pantry';
+import { ref, watch, computed } from "vue";
+import { usePantryStore } from "~~/app/stores/pantry";
 
 const store = usePantryStore();
 
 const CADENCE_PRESETS = [
-  { days: 1, label: 'Daily' },
-  { days: 3, label: 'Every 3 days' },
-  { days: 7, label: 'Weekly (7d)' },
-  { days: 14, label: 'Every 2 weeks (14d)' },
-  { days: 21, label: 'Every 3 weeks' },
-  { days: 30, label: 'Monthly (30d)' },
-  { days: 60, label: 'Every 2 months' },
-  { days: 90, label: 'Quarterly (90d)' },
+  { days: 1, label: "Daily" },
+  { days: 3, label: "Every 3 days" },
+  { days: 7, label: "Weekly (7d)" },
+  { days: 14, label: "Every 2 weeks (14d)" },
+  { days: 21, label: "Every 3 weeks" },
+  { days: 30, label: "Monthly (30d)" },
+  { days: 60, label: "Every 2 months" },
+  { days: 90, label: "Quarterly (90d)" },
 ];
 
-const name = ref('');
-const category = ref('General');
-const customCategory = ref('');
+const name = ref("");
+const category = ref("General");
+const customCategory = ref("");
 const inStock = ref(true);
 const quantity = ref(1);
-const unit = ref('items');
+const unit = ref("items");
 const frequencyDays = ref(7);
 const isCustomCadence = ref(false);
-const customDays = ref('7');
-const notes = ref('');
+const customDays = ref("7");
+const notes = ref("");
 const error = ref<string | null>(null);
 const isSubmitting = ref(false);
 
@@ -36,23 +36,23 @@ watch(
       category.value = store.editingItem.category;
       inStock.value = store.editingItem.inStock;
       quantity.value = store.editingItem.quantity || 1;
-      unit.value = store.editingItem.unit || 'items';
+      unit.value = store.editingItem.unit || "items";
       frequencyDays.value = store.editingItem.frequencyDays || 7;
       const isPreset = CADENCE_PRESETS.some((p) => p.days === store.editingItem?.frequencyDays);
       isCustomCadence.value = !isPreset;
       customDays.value = String(store.editingItem.frequencyDays || 7);
-      notes.value = store.editingItem.notes || '';
+      notes.value = store.editingItem.notes || "";
     } else {
-      name.value = '';
-      category.value = store.categories[0] || 'General';
-      customCategory.value = '';
+      name.value = "";
+      category.value = store.categories[0] || "General";
+      customCategory.value = "";
       inStock.value = true;
       quantity.value = 1;
-      unit.value = 'items';
+      unit.value = "items";
       frequencyDays.value = 7;
       isCustomCadence.value = false;
-      customDays.value = '7';
-      notes.value = '';
+      customDays.value = "7";
+      notes.value = "";
     }
     error.value = null;
   }
@@ -70,7 +70,7 @@ const duplicateConflict = computed(() => {
 
 async function handleSubmit() {
   if (!name.value.trim()) {
-    error.value = 'Item name is required';
+    error.value = "Item name is required";
     return;
   }
 
@@ -80,7 +80,7 @@ async function handleSubmit() {
   }
 
   const finalCadence = isCustomCadence.value ? parseInt(customDays.value, 10) || 7 : frequencyDays.value;
-  const finalCategory = category.value === '__custom__' ? customCategory.value.trim() || 'General' : category.value;
+  const finalCategory = category.value === "__custom__" ? customCategory.value.trim() || "General" : category.value;
 
   isSubmitting.value = true;
   error.value = null;
@@ -91,12 +91,12 @@ async function handleSubmit() {
       category: finalCategory,
       inStock: inStock.value,
       quantity: Math.max(0, quantity.value),
-      unit: unit.value.trim() || 'items',
+      unit: unit.value.trim() || "items",
       frequencyDays: finalCadence,
       notes: notes.value.trim(),
     });
-  } catch (err: any) {
-    error.value = err.message || 'Failed to save item';
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "Failed to save item";
   } finally {
     isSubmitting.value = false;
   }
@@ -133,7 +133,7 @@ async function handleSubmit() {
                 : 'border-slate-300 focus:border-emerald-500 focus:ring-emerald-200'
             ]"
             @input="error = null"
-          />
+          >
           <p v-if="duplicateConflict" class="text-xs text-rose-600 mt-1 flex items-center space-x-1">
             <UIcon name="i-lucide-alert-circle" class="w-3.5 h-3.5" />
             <span>Already in pantry. Choose a unique name or edit existing.</span>
@@ -161,7 +161,7 @@ async function handleSubmit() {
             type="text"
             placeholder="Enter new category name"
             class="mt-2 w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-          />
+          >
         </div>
 
         <!-- Purchase Cadence -->
@@ -207,7 +207,7 @@ async function handleSubmit() {
               min="1"
               max="365"
               class="w-24 px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:border-emerald-500"
-            />
+            >
             <span class="text-xs text-slate-600">days</span>
           </div>
         </div>
@@ -244,7 +244,7 @@ async function handleSubmit() {
                 type="number"
                 min="0"
                 class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:outline-none focus:border-emerald-500"
-              />
+              >
             </div>
             <div class="w-1/2">
               <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
@@ -255,7 +255,7 @@ async function handleSubmit() {
                 type="text"
                 placeholder="pack, bottle, kg"
                 class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:outline-none focus:border-emerald-500"
-              />
+              >
             </div>
           </div>
         </div>
@@ -271,7 +271,7 @@ async function handleSubmit() {
             type="text"
             placeholder="e.g. Brand preference, aisle location"
             class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:outline-none focus:border-emerald-500"
-          />
+          >
         </div>
       </form>
     </template>

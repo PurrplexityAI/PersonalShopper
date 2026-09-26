@@ -1,26 +1,29 @@
-import { defineStore } from 'pinia';
+import { defineStore } from "pinia";
 import type {
   PantryItem,
   ShoppingSuggestion,
   ActiveTab,
   StockFilter,
   CreatePantryItemDto,
-  AddToShoppingListDto,
-} from '~~/shared/types';
-import { generateSuggestions, evaluateItemCadence } from '~~/app/utils/cadence';
-import { soundEffects } from '~~/app/utils/audio';
-import { fireShoppingConfetti } from '~~/app/utils/confetti';
+} from "~~/shared/types";
+import { generateSuggestions, evaluateItemCadence } from "~~/app/utils/cadence";
+import { soundEffects } from "~~/app/utils/audio";
+import { fireShoppingConfetti } from "~~/app/utils/confetti";
 
-const STORAGE_KEY = 'personal_shopper_pantry_v1';
+const STORAGE_KEY = "personal_shopper_pantry_v1";
 
-export const usePantryStore = defineStore('pantry', {
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+export const usePantryStore = defineStore("pantry", {
   state: () => ({
     items: [] as PantryItem[],
     categories: [] as string[],
-    activeTab: 'shopping' as ActiveTab,
-    searchQuery: '',
-    selectedCategory: 'All',
-    stockFilter: 'all' as StockFilter,
+    activeTab: "shopping" as ActiveTab,
+    searchQuery: "",
+    selectedCategory: "All",
+    stockFilter: "all" as StockFilter,
     isLoading: true,
     isRefreshing: false,
     sessionPurchased: [] as Array<{ id: string; name: string; timestamp: string }>,
@@ -72,13 +75,13 @@ export const usePantryStore = defineStore('pantry', {
           if (!matchName && !matchCategory && !matchNotes) return false;
         }
 
-        if (state.selectedCategory !== 'All' && item.category !== state.selectedCategory) {
+        if (state.selectedCategory !== "All" && item.category !== state.selectedCategory) {
           return false;
         }
 
-        if (state.stockFilter === 'in-stock') return item.inStock;
-        if (state.stockFilter === 'out-of-stock') return !item.inStock;
-        if (state.stockFilter === 'due') {
+        if (state.stockFilter === "in-stock") return item.inStock;
+        if (state.stockFilter === "out-of-stock") return !item.inStock;
+        if (state.stockFilter === "due") {
           return evaluateItemCadence(item, now).isDue;
         }
 
@@ -88,13 +91,13 @@ export const usePantryStore = defineStore('pantry', {
   },
 
   actions: {
-    notify(title: string, description?: string, color: 'success' | 'error' | 'info' = 'success') {
+    notify(title: string, description?: string, color: "success" | "error" | "info" = "success") {
       try {
         const toast = useToast();
         toast.add({
           title,
           description,
-          color: color === 'error' ? 'error' : color === 'info' ? 'neutral' : 'success',
+          color: color === "error" ? "error" : color === "info" ? "neutral" : "success",
         });
       } catch {
         // Fallback if toast context is not initialized (e.g. testing)
@@ -105,14 +108,14 @@ export const usePantryStore = defineStore('pantry', {
       if (!isSilent) this.isRefreshing = true;
       try {
         const [pantryRes, catRes] = await Promise.all([
-          $fetch<{ success: boolean; data: PantryItem[] }>('/api/pantry'),
-          $fetch<{ success: boolean; data: string[] }>('/api/pantry/categories'),
+          $fetch<{ success: boolean; data: PantryItem[] }>("/api/pantry"),
+          $fetch<{ success: boolean; data: string[] }>("/api/pantry/categories"),
         ]);
 
         if (pantryRes && pantryRes.data) {
           this.items = pantryRes.data;
           // Sync to localStorage for offline / Capacitor readiness
-          if (typeof window !== 'undefined') {
+          if (typeof window !== "undefined") {
             try {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(this.items));
             } catch {
@@ -123,26 +126,26 @@ export const usePantryStore = defineStore('pantry', {
         if (catRes && catRes.data) {
           this.categories = catRes.data;
         }
-      } catch (err: any) {
+      } catch {
         // Fallback to localStorage if offline or in Capacitor without backend
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           const cached = localStorage.getItem(STORAGE_KEY);
           if (cached) {
             try {
               this.items = JSON.parse(cached);
               const defaultCategories = [
-                'Dairy & Eggs',
-                'Produce',
-                'Bakery',
-                'Meat & Seafood',
-                'Pantry Staples',
-                'Beverages',
-                'Snacks',
-                'Condiments & Spices',
-                'Frozen',
-                'Household',
-                'Personal Care',
-                'General',
+                "Dairy & Eggs",
+                "Produce",
+                "Bakery",
+                "Meat & Seafood",
+                "Pantry Staples",
+                "Beverages",
+                "Snacks",
+                "Condiments & Spices",
+                "Frozen",
+                "Household",
+                "Personal Care",
+                "General",
               ];
               const itemCats = this.items.map((i) => i.category);
               this.categories = Array.from(new Set([...defaultCategories, ...itemCats])).filter(Boolean).sort();
@@ -152,7 +155,7 @@ export const usePantryStore = defineStore('pantry', {
             }
           }
         }
-        this.notify('Error connecting to pantry server', err.message, 'error');
+        this.notify("Error connecting to pantry server", err.message, "error");
       } finally {
         this.isLoading = false;
         this.isRefreshing = false;
@@ -189,39 +192,39 @@ export const usePantryStore = defineStore('pantry', {
     async toggleStock(id: string) {
       try {
         const res = await $fetch<{ success: boolean; data: PantryItem }>(`/api/pantry/${id}/toggle-stock`, {
-          method: 'POST',
+          method: "POST",
         });
         const updated = res.data;
         this.notify(
-          `"${updated.name}" is now ${updated.inStock ? 'In Stock' : 'Out of Stock'}`,
+          `"${updated.name}" is now ${updated.inStock ? "In Stock" : "Out of Stock"}`,
           undefined,
-          updated.inStock ? 'success' : 'info'
+          updated.inStock ? "success" : "info"
         );
         await this.loadData(true);
-      } catch (err: any) {
-        this.notify('Failed to toggle stock', err.message, 'error');
+      } catch (err) {
+        this.notify("Failed to toggle stock", getErrorMessage(err), "error");
       }
     },
 
     async savePantryItem(data: CreatePantryItemDto) {
       try {
         if (this.editingItem) {
-          await $fetch('/api/pantry/' + this.editingItem.id, {
-            method: 'PUT',
+          await $fetch("/api/pantry/" + this.editingItem.id, {
+            method: "PUT",
             body: data,
           },);
-          this.notify(`Updated "${data.name || this.editingItem.name}"`, undefined, 'success');
+          this.notify(`Updated "${data.name || this.editingItem.name}"`, undefined, "success");
         } else {
-          await $fetch('/api/pantry', {
-            method: 'POST',
+          await $fetch("/api/pantry", {
+            method: "POST",
             body: data,
           });
-          this.notify(`Added "${data.name}" to pantry inventory`, undefined, 'success');
+          this.notify(`Added "${data.name}" to pantry inventory`, undefined, "success");
         }
         this.closeItemModal();
         await this.loadData(true);
-      } catch (err: any) {
-        this.notify('Failed to save item', err.message, 'error');
+      } catch (err) {
+        this.notify("Failed to save item", getErrorMessage(err), "error");
         throw err;
       }
     },
@@ -231,13 +234,13 @@ export const usePantryStore = defineStore('pantry', {
         return;
       }
       try {
-        await $fetch('/api/pantry/' + item.id, {
-          method: 'DELETE',
+        await $fetch("/api/pantry/" + item.id, {
+          method: "DELETE",
         });
-        this.notify(`Deleted "${item.name}" from pantry`, undefined, 'info');
+        this.notify(`Deleted "${item.name}" from pantry`, undefined, "info");
         await this.loadData(true);
-      } catch (err: any) {
-        this.notify('Failed to delete item', err.message, 'error');
+      } catch (err) {
+        this.notify("Failed to delete item", getErrorMessage(err), "error");
       }
     },
 
@@ -250,16 +253,16 @@ export const usePantryStore = defineStore('pantry', {
     }) {
       try {
         const res = await $fetch<{ success: boolean; data: PantryItem; message: string; createdInPantry: boolean }>(
-          '/api/shopping-list/add',
+          "/api/shopping-list/add",
           {
-            method: 'POST',
+            method: "POST",
             body: payload,
           }
         );
-        this.notify(res.message, undefined, 'success');
+        this.notify(res.message, undefined, "success");
         await this.loadData(true);
-      } catch (err: any) {
-        this.notify('Failed to add item', err.message, 'error');
+      } catch (err) {
+        this.notify("Failed to add item", getErrorMessage(err), "error");
       }
     },
 
@@ -271,28 +274,28 @@ export const usePantryStore = defineStore('pantry', {
         this.sessionPurchased.unshift({
           id: item.id,
           name: item.name,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         });
 
         await $fetch(`/api/shopping-list/${item.id}/check`, {
-          method: 'POST',
+          method: "POST",
         });
-        this.notify(`Bought "${item.name}"! In stock & cadence timer reset.`, undefined, 'success');
+        this.notify(`Bought "${item.name}"! In stock & cadence timer reset.`, undefined, "success");
         await this.loadData(true);
-      } catch (err: any) {
-        this.notify('Failed to tick off item', err.message, 'error');
+      } catch (err) {
+        this.notify("Failed to tick off item", getErrorMessage(err), "error");
       }
     },
 
     async deleteFromShoppingList(item: PantryItem) {
       try {
         await $fetch(`/api/shopping-list/${item.id}`, {
-          method: 'DELETE',
+          method: "DELETE",
         });
-        this.notify(`Removed "${item.name}" from shopping list (didn't buy).`, undefined, 'info');
+        this.notify(`Removed "${item.name}" from shopping list (didn't buy).`, undefined, "info");
         await this.loadData(true);
-      } catch (err: any) {
-        this.notify('Failed to remove item', err.message, 'error');
+      } catch (err) {
+        this.notify("Failed to remove item", getErrorMessage(err), "error");
       }
     },
 
@@ -303,75 +306,75 @@ export const usePantryStore = defineStore('pantry', {
         if (item) item.shoppingListQuantity = quantity;
 
         await $fetch(`/api/shopping-list/${id}/quantity`, {
-          method: 'PUT',
+          method: "PUT",
           body: { quantity },
         });
         await this.loadData(true);
-      } catch (err: any) {
-        this.notify('Failed to update quantity', err.message, 'error');
+      } catch (err) {
+        this.notify("Failed to update quantity", getErrorMessage(err), "error");
       }
     },
 
     async addBulkToShoppingList(itemIds: string[]) {
       try {
         const res = await $fetch<{ success: boolean; data: PantryItem[]; message: string }>(
-          '/api/shopping-list/add-bulk',
+          "/api/shopping-list/add-bulk",
           {
-            method: 'POST',
+            method: "POST",
             body: { itemIds },
           }
         );
-        this.notify(res.message || `Added ${itemIds.length} items to shopping list`, undefined, 'success');
+        this.notify(res.message || `Added ${itemIds.length} items to shopping list`, undefined, "success");
         await this.loadData(true);
-      } catch (err: any) {
-        this.notify('Failed to add items', err.message, 'error');
+      } catch (err) {
+        this.notify("Failed to add items", getErrorMessage(err), "error");
       }
     },
 
     async exportData() {
       try {
-        const data = await $fetch<{ items: PantryItem[]; exportedAt: string }>('/api/data/export');
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const data = await $fetch<{ items: PantryItem[]; exportedAt: string }>("/api/data/export");
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
         a.download = `personal-shopper-backup-${new Date().toISOString().slice(0, 10)}.json`;
         a.click();
         URL.revokeObjectURL(url);
-        this.notify('Pantry inventory exported successfully!');
-      } catch (err: any) {
-        this.notify('Export failed', err.message, 'error');
+        this.notify("Pantry inventory exported successfully!");
+      } catch (err) {
+        this.notify("Export failed", getErrorMessage(err), "error");
         throw err;
       }
     },
 
     async importData(incomingItems: PantryItem[]) {
       try {
-        const res = await $fetch<{ success: boolean; message: string }>('/api/data/import', {
-          method: 'POST',
+        const res = await $fetch<{ success: boolean; message: string }>("/api/data/import", {
+          method: "POST",
           body: { items: incomingItems },
         });
-        this.notify(res.message, undefined, 'success');
+        this.notify(res.message, undefined, "success");
         await this.loadData(true);
         return res.message;
-      } catch (err: any) {
-        this.notify('Import failed', err.message, 'error');
+      } catch (err) {
+        this.notify("Import failed", getErrorMessage(err), "error");
         throw err;
       }
     },
 
     async resetSampleData() {
-      if (!window.confirm('Reset pantry to sample grocery items? Your current entries will be replaced.')) {
+      if (!window.confirm("Reset pantry to sample grocery items? Your current entries will be replaced.")) {
         return;
       }
       try {
-        const res = await $fetch<{ success: boolean; message: string }>('/api/data/reset-sample', {
-          method: 'POST',
+        const res = await $fetch<{ success: boolean; message: string }>("/api/data/reset-sample", {
+          method: "POST",
         });
-        this.notify(res.message, undefined, 'success');
+        this.notify(res.message, undefined, "success");
         await this.loadData(true);
-      } catch (err: any) {
-        this.notify('Failed to reset data', err.message, 'error');
+      } catch (err) {
+        this.notify("Failed to reset data", getErrorMessage(err), "error");
         throw err;
       }
     },

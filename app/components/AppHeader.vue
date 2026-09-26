@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { usePantryStore } from '~~/app/stores/pantry';
+import { usePantryStore } from "~~/app/stores/pantry";
 
 const store = usePantryStore();
 </script>

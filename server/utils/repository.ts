@@ -4,7 +4,7 @@ import type {
   CreatePantryItemDto,
   UpdatePantryItemDto,
   AddToShoppingListDto,
-} from '~~/shared/types';
+} from "~~/shared/types";
 
 export interface PantryRepository {
   getAll(): Promise<PantryItem[]>;

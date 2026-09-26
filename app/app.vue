@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { usePantryStore } from '~~/app/stores/pantry';
-import Header from '~~/app/components/Header.vue';
-import Navbar from '~~/app/components/Navbar.vue';
-import ShoppingListView from '~~/app/components/ShoppingListView.vue';
-import PantryView from '~~/app/components/PantryView.vue';
-import SuggestionsView from '~~/app/components/SuggestionsView.vue';
-import ItemModal from '~~/app/components/ItemModal.vue';
-import DataModal from '~~/app/components/DataModal.vue';
+import { onMounted } from "vue";
+import { usePantryStore } from "~~/app/stores/pantry";
+import AppHeader from "~~/app/components/AppHeader.vue";
+import AppNavbar from "~~/app/components/AppNavbar.vue";
+import ShoppingListView from "~~/app/components/ShoppingListView.vue";
+import PantryView from "~~/app/components/PantryView.vue";
+import SuggestionsView from "~~/app/components/SuggestionsView.vue";
+import ItemModal from "~~/app/components/ItemModal.vue";
+import DataModal from "~~/app/components/DataModal.vue";
 
 const store = usePantryStore();
 
@@ -20,10 +20,10 @@ onMounted(() => {
   <UApp>
     <div class="min-h-screen bg-slate-50 flex flex-col font-sans">
       <!-- Top Header -->
-      <Header />
+      <AppHeader />
 
       <!-- Main Navigation (Desktop Top & Mobile Bottom) -->
-      <Navbar />
+      <AppNavbar />
 
       <!-- Main Content Area -->
       <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-4 sm:py-6">

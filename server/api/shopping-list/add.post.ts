@@ -1,11 +1,11 @@
-import { repository } from '../../utils/db';
+import { repository } from "../../utils/db";
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
     const { nameOrId, quantity, category, frequencyDays, unit } = body;
-    if (!nameOrId || typeof nameOrId !== 'string') {
-      throw createError({ statusCode: 400, statusMessage: 'nameOrId is required' });
+    if (!nameOrId || typeof nameOrId !== "string") {
+      throw createError({ statusCode: 400, statusMessage: "nameOrId is required" });
     }
 
     const result = await repository.addToShoppingList(nameOrId, {
@@ -23,8 +23,9 @@ export default defineEventHandler(async (event) => {
         ? `Added "${result.item.name}" to shopping list and created it in pantry!`
         : `Added "${result.item.name}" to shopping list.`,
     };
-  } catch (err: any) {
-    if (err.statusCode) throw err;
-    throw createError({ statusCode: 400, statusMessage: err.message });
+  } catch (err) {
+    if (err && typeof err === "object" && "statusCode" in err) throw err;
+    const message = err instanceof Error ? err.message : String(err);
+    throw createError({ statusCode: 400, statusMessage: message });
   }
 });
