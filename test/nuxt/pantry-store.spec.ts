@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 import { usePantryStore } from "~~/app/stores/pantry";
 import type { PantryItem } from "~~/shared/types";
@@ -200,5 +200,108 @@ describe("Pinia Pantry Store", () => {
     // When in stock, setting inStock: false should call toggleStock
     await store.setStock("stock-1", false);
     expect(toggleCalled).toBe(true);
+  });
+
+  it("handles sessionPurchased management and clearSessionPurchased", () => {
+    const store = usePantryStore();
+    store.sessionPurchased = [
+      { id: "1", name: "Milk", timestamp: "10:00" },
+      { id: "2", name: "Bread", timestamp: "10:05" },
+    ];
+    expect(store.sessionPurchased.length).toBe(2);
+
+    store.clearSessionPurchased();
+    expect(store.sessionPurchased).toEqual([]);
+  });
+
+  it("handles checkOffShoppingItem by unshifting to sessionPurchased and deduplicating", async () => {
+    const store = usePantryStore();
+    const fetchMock = vi.fn().mockResolvedValue({ success: true });
+    vi.stubGlobal("$fetch", fetchMock);
+    store.loadData = vi.fn().mockResolvedValue(undefined);
+
+    const item1: PantryItem = {
+      id: "item-1",
+      name: "Milk",
+      category: "Dairy",
+      inStock: false,
+      quantity: 1,
+      unit: "bottle",
+      frequencyDays: 7,
+      frequencyLabel: "Weekly",
+      lastPurchasedAt: null,
+      nextDueDate: null,
+      inShoppingList: true,
+      shoppingListQuantity: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const item2: PantryItem = {
+      id: "item-2",
+      name: "Bread",
+      category: "Bakery",
+      inStock: false,
+      quantity: 1,
+      unit: "loaf",
+      frequencyDays: 5,
+      frequencyLabel: "5 days",
+      lastPurchasedAt: null,
+      nextDueDate: null,
+      inShoppingList: true,
+      shoppingListQuantity: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Check off first item
+    await store.checkOffShoppingItem(item1);
+    expect(store.sessionPurchased.length).toBe(1);
+    expect(store.sessionPurchased[0].id).toBe("item-1");
+
+    // Check off second item -> should be unshifted to index 0
+    await store.checkOffShoppingItem(item2);
+    expect(store.sessionPurchased.length).toBe(2);
+    expect(store.sessionPurchased[0].id).toBe("item-2");
+    expect(store.sessionPurchased[1].id).toBe("item-1");
+
+    // Check off first item again -> deduplicated and moved to index 0
+    await store.checkOffShoppingItem(item1);
+    expect(store.sessionPurchased.length).toBe(2);
+    expect(store.sessionPurchased[0].id).toBe("item-1");
+    expect(store.sessionPurchased[1].id).toBe("item-2");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("handles uncheckShoppingItem by removing from sessionPurchased", async () => {
+    const store = usePantryStore();
+    store.loadData = vi.fn().mockResolvedValue(undefined);
+
+    store.sessionPurchased = [
+      { id: "item-1", name: "Milk", timestamp: "10:00" },
+      { id: "item-2", name: "Bread", timestamp: "10:05" },
+    ];
+
+    const item1: PantryItem = {
+      id: "item-1",
+      name: "Milk",
+      category: "Dairy",
+      inStock: true,
+      quantity: 1,
+      unit: "bottle",
+      frequencyDays: 7,
+      frequencyLabel: "Weekly",
+      lastPurchasedAt: null,
+      nextDueDate: null,
+      inShoppingList: false,
+      shoppingListQuantity: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    await store.uncheckShoppingItem(item1);
+    expect(store.sessionPurchased.length).toBe(1);
+    expect(store.sessionPurchased[0].id).toBe("item-2");
   });
 });

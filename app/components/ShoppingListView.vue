@@ -79,6 +79,43 @@ async function handleAddAllSuggestions() {
     await store.addBulkToShoppingList(ids);
   }
 }
+
+const isPurchasedOpen = ref(true);
+
+const purchasedItems = computed<PantryItem[]>(() => {
+  return store.sessionPurchased
+    .map((s) => {
+      const found = store.items.find((item) => item.id === s.id);
+      if (found) return found;
+      return {
+        id: s.id,
+        name: s.name,
+        category: "Other",
+        inStock: true,
+        quantity: 1,
+        unit: "item",
+        frequencyDays: 7,
+        frequencyLabel: "Weekly (7d)",
+        lastPurchasedAt: new Date().toISOString(),
+        nextDueDate: null,
+        inShoppingList: false,
+        shoppingListQuantity: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as PantryItem;
+    });
+});
+
+async function handleCheckOff(item: PantryItem) {
+  if (store.sessionPurchased.length === 0) {
+    isPurchasedOpen.value = true;
+  }
+  await store.checkOffShoppingItem(item);
+}
+
+async function handleUncheck(item: PantryItem) {
+  await store.uncheckShoppingItem(item);
+}
 </script>
 
 <template>
@@ -265,13 +302,13 @@ async function handleAddAllSuggestions() {
     <div class="space-y-3">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
         <div class="flex items-center space-x-2">
-          <h2 class="font-bold text-highlighted">Next Shop List</h2>
+          <h2 class="font-bold text-highlighted">Shopping list</h2>
           <UBadge
             color="neutral"
-            variant="subtle"
+            variant="soft"
             size="md"
           >
-            {{ displayedShoppingList.length }} items
+            {{ displayedShoppingList.length }} item(s)
           </UBadge>
         </div>
 
@@ -341,125 +378,61 @@ async function handleAddAllSuggestions() {
 
       <!-- Item Rows -->
       <div v-else class="space-y-2">
-        <div
+        <ShoppingListItemCard
           v-for="item in displayedShoppingList"
           :key="item.id"
-          class="bg-default rounded-2xl border border-default p-3.5 shadow-xs hover:border-accented transition-all flex items-center justify-between gap-3 group"
-        >
-          <!-- Left: Interactive Tick Circle -->
-          <div class="flex items-center space-x-3 min-w-0">
-            <UButton
-              color="primary"
-              variant="outline"
-              size="md"
-              icon="i-lucide-check"
-              title="Tick off (Bought - reset cadence & mark in stock)"
-              aria-label="Tick off (Bought - reset cadence & mark in stock)"
-              class="rounded-full shrink-0"
-              @click="store.checkOffShoppingItem(item)"
-            />
-
-            <div class="min-w-0">
-              <div class="flex items-center space-x-2">
-                <span class="font-bold text-highlighted truncate">{{ item.name }}</span>
-                <UBadge
-                  color="neutral"
-                  variant="subtle"
-                  size="md"
-                >
-                  {{ item.category }}
-                </UBadge>
-              </div>
-              <div class="flex items-center space-x-2 text-muted mt-0.5">
-                <span class="inline-flex items-center space-x-1 text-dimmed">
-                  <UIcon name="i-lucide-clock" class="w-3.5 h-3.5 text-dimmed" />
-                  <span>{{ item.frequencyLabel }}</span>
-                </span>
-                <span v-if="item.notes" class="text-dimmed truncate">• {{ item.notes }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right: Quantity Controls & Delete ("Didn't buy") Button -->
-          <div class="flex items-center space-x-2 shrink-0">
-            <!-- Quantity Stepper using UFieldGroup, UButton, and UInput -->
-            <UFieldGroup size="md">
-              <UButton
-                color="neutral"
-                variant="subtle"
-                size="md"
-                icon="i-lucide-minus"
-                :disabled="(item.shoppingListQuantity || 1) <= 1"
-                aria-label="Decrease quantity"
-                @click="store.updateShoppingQuantity(item.id, Math.max(1, (item.shoppingListQuantity || 1) - 1))"
-              />
-              <UInput
-                type="number"
-                size="md"
-                :model-value="item.shoppingListQuantity || 1"
-                min="1"
-                class="w-16"
-                :ui="{ base: 'text-center font-semibold' }"
-                @update:model-value="(val) => store.updateShoppingQuantity(item.id, Math.max(1, Number(val) || 1))"
-              />
-              <UButton
-                color="neutral"
-                variant="subtle"
-                size="md"
-                icon="i-lucide-plus"
-                aria-label="Increase quantity"
-                @click="store.updateShoppingQuantity(item.id, (item.shoppingListQuantity || 1) + 1)"
-              />
-            </UFieldGroup>
-
-            <!-- Delete button: didn't buy semantic -->
-            <UButton
-              color="neutral"
-              variant="ghost"
-              size="md"
-              icon="i-lucide-trash-2"
-              title="Didn't buy it (Remove from list without resetting cadence)"
-              aria-label="Didn't buy it"
-              @click="store.deleteFromShoppingList(item)"
-            />
-          </div>
-        </div>
+          :item="item"
+          @toggle-check="handleCheckOff(item)"
+        />
       </div>
     </div>
 
     <!-- Purchased This Trip (Session History) -->
-    <div v-if="store.sessionPurchased.length > 0" class="bg-muted border border-default rounded-2xl p-4 mt-6">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-bold text-toned uppercase tracking-wider flex items-center space-x-1.5">
-          <UIcon name="i-lucide-check" class="w-3.5 h-3.5 text-primary" />
-          <span>Purchased This Trip ({{ store.sessionPurchased.length }})</span>
-        </h3>
+    <div v-if="store.sessionPurchased.length > 0" class="mt-6 space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <UButton
+            color="secondary"
+            variant="solid"
+            size="md"
+            :trailing-icon="isPurchasedOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+            label="Purchased this trip"
+            @click="isPurchasedOpen = !isPurchasedOpen"
+          />
+          <UBadge
+            color="neutral"
+            variant="soft"
+            size="md"
+          >
+            {{ store.sessionPurchased.length }} item(s)
+          </UBadge>
+        </div>
+
         <UButton
           color="neutral"
           variant="link"
           size="md"
-          class="text-muted hover:text-highlighted p-0"
+          class="text-muted hover:text-highlighted p-0 cursor-pointer"
           @click="store.clearSessionPurchased()"
         >
           Clear
         </UButton>
       </div>
-      <p class="text-muted mb-2.5">
-        These items were marked in-stock in your pantry and their cadence timers have been reset to today.
-      </p>
-      <div class="flex flex-wrap gap-2">
-        <UBadge
-          v-for="(sessionItem, idx) in store.sessionPurchased"
-          :key="`${sessionItem.id}-${idx}`"
-          color="success"
-          variant="subtle"
-          size="md"
-          icon="i-lucide-check"
-        >
-          <span class="line-through">{{ sessionItem.name }}</span>
-          <span class="opacity-75">at {{ sessionItem.timestamp }}</span>
-        </UBadge>
-      </div>
+
+      <UCollapsible v-model:open="isPurchasedOpen">
+        <template #content>
+          <div class="space-y-2 pt-1">
+            <ShoppingListItemCard
+              v-for="item in purchasedItems"
+              :key="item.id"
+              :item="item"
+              :checked="true"
+              :hide-delete="true"
+              @toggle-check="handleUncheck(item)"
+            />
+          </div>
+        </template>
+      </UCollapsible>
     </div>
   </div>
 </template>

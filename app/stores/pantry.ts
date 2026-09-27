@@ -279,6 +279,7 @@ export const usePantryStore = defineStore("pantry", {
         soundEffects.playCheckSuccess();
         fireShoppingConfetti();
 
+        this.sessionPurchased = this.sessionPurchased.filter((s) => s.id !== item.id);
         this.sessionPurchased.unshift({
           id: item.id,
           name: item.name,
@@ -292,6 +293,20 @@ export const usePantryStore = defineStore("pantry", {
         await this.loadData(true);
       } catch (err) {
         this.notify("Failed to tick off item", getErrorMessage(err), "error");
+      }
+    },
+
+    async uncheckShoppingItem(item: PantryItem) {
+      try {
+        this.sessionPurchased = this.sessionPurchased.filter((s) => s.id !== item.id);
+        await $fetch("/api/shopping-list/add", {
+          method: "POST",
+          body: { nameOrId: item.id, quantity: 1 },
+        });
+        this.notify(`Moved "${item.name}" back to shopping list.`, undefined, "info");
+        await this.loadData(true);
+      } catch (err) {
+        this.notify("Failed to move item back to shopping list", getErrorMessage(err), "error");
       }
     },
 
