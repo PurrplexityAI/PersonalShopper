@@ -2,8 +2,25 @@
 import { ref, computed } from "vue";
 import { usePantryStore } from "~~/app/stores/pantry";
 import type { PantryItem } from "~~/shared/types";
+import { sortPantryItems, type PantrySortOption } from "~~/app/utils/sort";
 
 const store = usePantryStore();
+
+const selectedCategory = ref<string | null>(null);
+const sortBy = ref<PantrySortOption>("alpha-asc");
+
+const filteredShoppingList = computed(() => {
+  return store.shoppingList.filter((item) => {
+    if (selectedCategory.value !== null && item.category !== selectedCategory.value) {
+      return false;
+    }
+    return true;
+  });
+});
+
+const displayedShoppingList = computed(() => {
+  return sortPantryItems(filteredShoppingList.value, sortBy.value);
+});
 
 const quickInput = ref("");
 const showSuggestions = ref(true);
@@ -246,7 +263,7 @@ async function handleAddAllSuggestions() {
 
     <!-- Active Shopping List Section -->
     <div class="space-y-3">
-      <div class="flex items-center justify-between px-1">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
         <div class="flex items-center space-x-2">
           <h2 class="font-bold text-highlighted">Next Shop List</h2>
           <UBadge
@@ -254,16 +271,25 @@ async function handleAddAllSuggestions() {
             variant="subtle"
             size="md"
           >
-            {{ store.shoppingList.length }} items
+            {{ displayedShoppingList.length }} items
           </UBadge>
         </div>
 
-        <div class="text-muted hidden sm:block">
-          Tick off = in-stock + reset timer • Delete = didn't buy
+        <!-- Category & Sort Selects (aligned right on desktop, wraps on mobile) -->
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
+          <CategorySelect
+            v-model="selectedCategory"
+            class="flex-1 sm:flex-none sm:w-48"
+          />
+          <PantrySortSelect
+            v-model="sortBy"
+            :show-next-due="false"
+            class="flex-1 sm:flex-none sm:w-48"
+          />
         </div>
       </div>
 
-      <!-- Empty State -->
+      <!-- Empty State: Entire Shopping List is Empty -->
       <div
         v-if="store.shoppingList.length === 0"
         class="bg-default rounded-2xl border border-default p-8 text-center space-y-3"
@@ -289,10 +315,34 @@ async function handleAddAllSuggestions() {
         </UButton>
       </div>
 
+      <!-- Empty State: Filtered Category has No Items -->
+      <div
+        v-else-if="displayedShoppingList.length === 0"
+        class="bg-default rounded-2xl border border-default p-8 text-center space-y-3"
+      >
+        <div class="w-12 h-12 rounded-full bg-muted text-muted mx-auto flex items-center justify-center">
+          <UIcon name="i-lucide-tag" class="w-6 h-6" />
+        </div>
+        <div>
+          <h3 class="font-bold text-highlighted">No shopping items in "{{ selectedCategory }}"</h3>
+          <p class="text-muted mt-1">
+            You have items on your shopping list, but none match this category filter.
+          </p>
+        </div>
+        <UButton
+          color="primary"
+          variant="subtle"
+          size="md"
+          @click="selectedCategory = null"
+        >
+          Show All Categories
+        </UButton>
+      </div>
+
       <!-- Item Rows -->
       <div v-else class="space-y-2">
         <div
-          v-for="item in store.shoppingList"
+          v-for="item in displayedShoppingList"
           :key="item.id"
           class="bg-default rounded-2xl border border-default p-3.5 shadow-xs hover:border-accented transition-all flex items-center justify-between gap-3 group"
         >

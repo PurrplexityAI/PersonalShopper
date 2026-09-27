@@ -13,7 +13,7 @@ describe("Pinia Pantry Store", () => {
     expect(store.items).toEqual([]);
     expect(store.activeTab).toBe("shopping");
     expect(store.searchQuery).toBe("");
-    expect(store.selectedCategory).toBe("All");
+    expect(store.selectedCategory).toBeNull();
     expect(store.stockFilter).toBe("all");
     expect(store.shoppingList).toEqual([]);
     expect(store.suggestions).toEqual([]);
@@ -119,7 +119,7 @@ describe("Pinia Pantry Store", () => {
     expect(store.filteredItems[0].name).toBe("Whole Milk");
 
     // Filter by stock status
-    store.selectedCategory = "All";
+    store.selectedCategory = null;
     store.stockFilter = "out-of-stock";
     expect(store.filteredItems.length).toBe(1);
     expect(store.filteredItems[0].name).toBe("Whole Milk");

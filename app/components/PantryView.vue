@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import { ref, computed } from "vue";
 import { usePantryStore } from "~~/app/stores/pantry";
 import type { PantryItem } from "~~/shared/types";
 import { formatRelativeDate } from "~~/app/utils/format";
+import { sortPantryItems, type PantrySortOption } from "~~/app/utils/sort";
 
 const store = usePantryStore();
+
+const sortBy = ref<PantrySortOption>("alpha-asc");
+
+const displayedItems = computed(() => {
+  return sortPantryItems(store.filteredItems, sortBy.value);
+});
 
 const now = new Date();
 
@@ -60,10 +68,10 @@ function getItemCadenceInfo(item: PantryItem) {
       </UButton>
     </div>
 
-    <!-- Filter Tabs and Categories -->
-    <div class="space-y-2">
+    <!-- Filter Tabs, Categories and Sort -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
       <!-- Stock Filter Pills -->
-      <div class="flex items-center space-x-2 overflow-x-auto pb-1 no-scrollbar">
+      <div class="flex items-center space-x-2 overflow-x-auto pb-1 no-scrollbar shrink-0">
         <UButton
           size="md"
           color="neutral"
@@ -99,32 +107,23 @@ function getItemCadenceInfo(item: PantryItem) {
         </UButton>
       </div>
 
-      <!-- Category Pills -->
-      <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 no-scrollbar">
-        <UButton
-          size="md"
-          color="neutral"
-          :variant="store.selectedCategory === 'All' ? 'subtle' : 'ghost'"
-          @click="store.selectedCategory = 'All'"
-        >
-          All Categories
-        </UButton>
-        <UButton
-          v-for="cat in store.categories"
-          :key="cat"
-          size="md"
-          color="neutral"
-          :variant="store.selectedCategory === cat ? 'subtle' : 'ghost'"
-          @click="store.selectedCategory = cat"
-        >
-          {{ cat }}
-        </UButton>
+      <!-- Category & Sort Selects (aligned right on desktop, wraps on mobile) -->
+      <div class="flex items-center gap-2 w-full lg:w-auto justify-start sm:justify-end">
+        <CategorySelect
+          v-model="store.selectedCategory"
+          class="flex-1 sm:flex-none sm:w-48"
+        />
+        <PantrySortSelect
+          v-model="sortBy"
+          :show-next-due="true"
+          class="flex-1 sm:flex-none sm:w-48"
+        />
       </div>
     </div>
 
     <!-- Empty State -->
     <div
-      v-if="store.filteredItems.length === 0"
+      v-if="displayedItems.length === 0"
       class="bg-default rounded-2xl border border-default p-8 text-center space-y-3"
     >
       <div class="w-12 h-12 rounded-full bg-muted text-muted mx-auto flex items-center justify-center">
@@ -140,7 +139,7 @@ function getItemCadenceInfo(item: PantryItem) {
         color="primary"
         variant="subtle"
         size="md"
-        @click="() => { store.searchQuery = ''; store.selectedCategory = 'All'; store.stockFilter = 'all'; }"
+        @click="() => { store.searchQuery = ''; store.selectedCategory = null; store.stockFilter = 'all'; sortBy = 'alpha-asc'; }"
       >
         Reset Filters
       </UButton>
@@ -149,7 +148,7 @@ function getItemCadenceInfo(item: PantryItem) {
     <!-- Items Grid -->
     <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
       <div
-        v-for="item in store.filteredItems"
+        v-for="item in displayedItems"
         :key="item.id"
         class="rounded-2xl border p-4 shadow-xs transition-all hover:shadow-md flex flex-col justify-between"
         :class="[

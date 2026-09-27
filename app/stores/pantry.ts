@@ -22,7 +22,7 @@ export const usePantryStore = defineStore("pantry", {
     categories: [] as string[],
     activeTab: "shopping" as ActiveTab,
     searchQuery: "",
-    selectedCategory: "All",
+    selectedCategory: null as string | null,
     stockFilter: "all" as StockFilter,
     isLoading: true,
     isRefreshing: false,
@@ -75,7 +75,7 @@ export const usePantryStore = defineStore("pantry", {
           if (!matchName && !matchCategory && !matchNotes) return false;
         }
 
-        if (state.selectedCategory !== "All" && item.category !== state.selectedCategory) {
+        if (state.selectedCategory !== null && state.selectedCategory !== "All" && item.category !== state.selectedCategory) {
           return false;
         }
 
