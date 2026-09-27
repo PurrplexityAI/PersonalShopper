@@ -71,11 +71,12 @@ function getItemCadenceInfo(item: PantryItem) {
     <!-- Filter Tabs, Categories and Sort -->
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
       <!-- Stock Filter Pills -->
-      <div class="flex items-center space-x-2 overflow-x-auto pb-1 no-scrollbar shrink-0">
+      <div class="grid grid-cols-4 items-stretch gap-1.5 sm:flex sm:items-center sm:gap-2 shrink-0">
         <UButton
           size="md"
           color="neutral"
-          :variant="store.stockFilter === 'all' ? 'solid' : 'subtle'"
+          :variant="store.stockFilter === 'all' ? 'solid' : 'soft'"
+          class="h-full justify-center text-center px-1 sm:h-auto sm:px-2.5"
           @click="store.stockFilter = 'all'"
         >
           All Items ({{ store.totalCount }})
@@ -83,7 +84,8 @@ function getItemCadenceInfo(item: PantryItem) {
         <UButton
           size="md"
           :color="store.stockFilter === 'in-stock' ? 'primary' : 'neutral'"
-          :variant="store.stockFilter === 'in-stock' ? 'solid' : 'subtle'"
+          :variant="store.stockFilter === 'in-stock' ? 'solid' : 'soft'"
+          class="h-full justify-center text-center px-1 sm:h-auto sm:px-2.5"
           @click="store.stockFilter = 'in-stock'"
         >
           In Stock ({{ store.inStockCount }})
@@ -91,7 +93,8 @@ function getItemCadenceInfo(item: PantryItem) {
         <UButton
           size="md"
           :color="store.stockFilter === 'out-of-stock' ? 'error' : 'neutral'"
-          :variant="store.stockFilter === 'out-of-stock' ? 'solid' : 'subtle'"
+          :variant="store.stockFilter === 'out-of-stock' ? 'solid' : 'soft'"
+          class="h-full justify-center text-center px-1 sm:h-auto sm:px-2.5"
           @click="store.stockFilter = 'out-of-stock'"
         >
           Out of Stock ({{ store.outOfStockCount }})
@@ -99,16 +102,17 @@ function getItemCadenceInfo(item: PantryItem) {
         <UButton
           size="md"
           :color="store.stockFilter === 'due' ? 'warning' : 'neutral'"
-          :variant="store.stockFilter === 'due' ? 'solid' : 'subtle'"
+          :variant="store.stockFilter === 'due' ? 'solid' : 'soft'"
           icon="i-lucide-sparkles"
+          class="h-full justify-center text-center px-1 sm:h-auto sm:px-2.5"
           @click="store.stockFilter = 'due'"
         >
           Due for Restock ({{ store.dueCount }})
         </UButton>
       </div>
 
-      <!-- Category & Sort Selects (aligned right on desktop, wraps on mobile) -->
-      <div class="flex items-center gap-2 w-full lg:w-auto justify-start sm:justify-end">
+      <!-- Category & Sort Selects -->
+      <div class="flex items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
         <CategorySelect
           v-model="store.selectedCategory"
           class="flex-1 sm:flex-none sm:w-48"
