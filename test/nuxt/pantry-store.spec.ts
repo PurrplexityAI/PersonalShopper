@@ -166,4 +166,39 @@ describe("Pinia Pantry Store", () => {
     store.closeDataModal();
     expect(store.isDataModalOpen).toBe(false);
   });
+
+  it("handles setStock correctly", async () => {
+    const store = usePantryStore();
+    const item: PantryItem = {
+      id: "stock-1",
+      name: "Eggs",
+      category: "Dairy & Eggs",
+      inStock: true,
+      quantity: 12,
+      unit: "pack",
+      frequencyDays: 7,
+      frequencyLabel: "Weekly",
+      lastPurchasedAt: null,
+      nextDueDate: null,
+      inShoppingList: false,
+      shoppingListQuantity: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    store.items = [item];
+
+    let toggleCalled = false;
+    store.toggleStock = async () => {
+      toggleCalled = true;
+    };
+
+    // When already in stock, setting inStock: true should be a no-op
+    await store.setStock("stock-1", true);
+    expect(toggleCalled).toBe(false);
+
+    // When in stock, setting inStock: false should call toggleStock
+    await store.setStock("stock-1", false);
+    expect(toggleCalled).toBe(true);
+  });
 });

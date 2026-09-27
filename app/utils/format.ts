@@ -17,6 +17,75 @@ export function formatRelativeDate(isoDate: string | null): string {
   return target.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+export function getOrdinalSuffix(day: number): string {
+  if (day >= 11 && day <= 13) {
+    return "th";
+  }
+  switch (day % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+}
+
+export function formatDateWithOrdinal(date: Date): string {
+  const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
+  const day = date.getDate();
+  const month = date.toLocaleDateString("en-US", { month: "long" });
+  return `${weekday} ${day}${getOrdinalSuffix(day)} ${month}`;
+}
+
+export function formatNextDueLabel(isoDate: string | null, now: Date = new Date()): string {
+  if (!isoDate) return "No due date scheduled";
+  const target = new Date(isoDate);
+  if (isNaN(target.getTime())) return "No due date scheduled";
+
+  const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const diffDays = Math.round((targetDay - today) / (24 * 60 * 60 * 1000));
+
+  const formattedDate = formatDateWithOrdinal(target);
+
+  if (diffDays === 0) return `Due today, ${formattedDate}`;
+  if (diffDays === 1) return `Due tomorrow, ${formattedDate}`;
+  if (diffDays > 1) return `Due in ${diffDays} days, ${formattedDate}`;
+  if (diffDays === -1) return `Overdue by 1 day, ${formattedDate}`;
+  return `Overdue by ${Math.abs(diffDays)} days, ${formattedDate}`;
+}
+
+export function formatLastBoughtLabel(isoDate: string | null, now: Date = new Date()): string {
+  if (!isoDate) return "Never bought";
+  const target = new Date(isoDate);
+  if (isNaN(target.getTime())) return "Never bought";
+
+  const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const diffDays = Math.round((today - targetDay) / (24 * 60 * 60 * 1000));
+
+  const formattedDate = formatDateWithOrdinal(target);
+
+  if (diffDays === 0) return `Bought today, ${formattedDate}`;
+  if (diffDays === 1) return `Bought yesterday, ${formattedDate}`;
+  if (diffDays > 1) return `Bought ${diffDays} days ago, ${formattedDate}`;
+  return `Bought ${formattedDate}`;
+}
+
+export function formatFrequencyLabel(item: { frequencyDays?: number; frequencyLabel?: string }): string {
+  if (!item.frequencyDays || item.frequencyDays <= 0) {
+    return "No recurring frequency";
+  }
+  const label = item.frequencyLabel || `Every ${item.frequencyDays} days`;
+  if (label.toLowerCase().startsWith("repeats")) {
+    return label;
+  }
+  return `Repeats ${label.toLowerCase()}`;
+}
+
 export function getCategoryColor(category: string): { bg: string; text: string; border: string } {
   const colors: Record<string, { bg: string; text: string; border: string }> = {
     "Dairy & Eggs": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },

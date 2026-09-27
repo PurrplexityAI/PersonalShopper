@@ -206,6 +206,14 @@ export const usePantryStore = defineStore("pantry", {
       }
     },
 
+    async setStock(id: string, inStock: boolean) {
+      const item = this.items.find((i) => i.id === id);
+      if (item && item.inStock === inStock) {
+        return;
+      }
+      await this.toggleStock(id);
+    },
+
     async savePantryItem(data: CreatePantryItemDto) {
       try {
         if (this.editingItem) {

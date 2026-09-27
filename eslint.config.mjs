@@ -56,7 +56,6 @@ export default withNuxt(
         "/^(text|bg|border|ring|outline|divide)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\\d+/",
         "/^(text|bg|border|ring|outline)-(white|black)/",
         "text-xs",
-        "text-sm",
       ],
     },
   },

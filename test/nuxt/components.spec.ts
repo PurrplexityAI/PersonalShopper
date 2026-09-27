@@ -67,3 +67,33 @@ describe("PantrySortSelect component", () => {
     expect(wrapper.text()).toContain("Alphabetical (A-z)");
   });
 });
+
+describe("PantryView component", () => {
+  it("renders pantry view and displays pantry item cards", async () => {
+    const store = usePantryStore();
+    store.items = [
+      {
+        id: "p1",
+        name: "Olive Oil",
+        category: "Pantry Staples",
+        inStock: true,
+        quantity: 1,
+        unit: "bottle",
+        frequencyDays: 30,
+        frequencyLabel: "Monthly (30d)",
+        lastPurchasedAt: null,
+        nextDueDate: null,
+        inShoppingList: false,
+        shoppingListQuantity: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+
+    const wrapper = await mountSuspended((await import("~~/app/components/PantryView.vue")).default);
+    expect(wrapper.exists()).toBe(true);
+    expect(wrapper.text()).toContain("Olive Oil");
+    expect(wrapper.text()).toContain("Pantry Staples");
+    expect(wrapper.findComponent({ name: "PantryItemCard" }).exists()).toBe(true);
+  });
+});
