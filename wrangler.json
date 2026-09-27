@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "personal-shopper",
+  "main": "./.output/server/index.mjs",
+  "workers_dev": false,
+  "preview_urls": false,
+  "compatibility_date": "2026-09-25",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./.output/public"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "routes": [
+    {
+      "pattern": "shopper.ali.uk.com",
+      "custom_domain": true
+    }
+  ]
+}

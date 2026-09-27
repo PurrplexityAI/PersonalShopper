@@ -6,6 +6,16 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
   compatibilityDate: "2026-09-25",
+  $production: {
+    nitro: {
+      preset: "cloudflare_module",
+    },
+  },
+  nitro: {
+    alias: {
+      "pg-native": "unenv/mock/empty",
+    },
+  },
   app: {
     head: {
       title: "Personal Shopper - Pantry & Shopping List",

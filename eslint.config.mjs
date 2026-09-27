@@ -6,6 +6,8 @@ export default withNuxt(
     ignores: [
       "prisma/contract.d.ts",
       "prisma/contract.json",
+      "worker-configuration.d.ts",
+      "migrations/**",
       ".agents/**",
     ],
   },
