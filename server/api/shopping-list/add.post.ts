@@ -1,4 +1,4 @@
-import { repository } from "../../utils/db";
+import { withRepository } from "../../utils/db";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -8,12 +8,14 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, statusMessage: "nameOrId is required" });
     }
 
-    const result = await repository.addToShoppingList(nameOrId, {
-      quantity: Number(quantity) || 1,
-      category,
-      frequencyDays: Number(frequencyDays) || 7,
-      unit,
-    });
+    const result = await withRepository(event, (repo) =>
+      repo.addToShoppingList(nameOrId, {
+        quantity: Number(quantity) || 1,
+        category,
+        frequencyDays: Number(frequencyDays) || 7,
+        unit,
+      })
+    );
 
     return {
       success: true,

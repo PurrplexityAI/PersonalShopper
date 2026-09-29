@@ -1,8 +1,8 @@
-import { repository } from "../../utils/db";
+import { withRepository } from "../../utils/db";
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
   try {
-    const suggestions = await repository.getSuggestions();
+    const suggestions = await withRepository(event, (repo) => repo.getSuggestions());
     return { success: true, data: suggestions };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

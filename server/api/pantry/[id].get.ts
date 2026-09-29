@@ -1,4 +1,4 @@
-import { repository } from "../../utils/db";
+import { withRepository } from "../../utils/db";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
     if (!id) {
       throw createError({ statusCode: 400, statusMessage: "ID is required" });
     }
-    const item = await repository.getById(id);
+    const item = await withRepository(event, (repo) => repo.getById(id));
     if (!item) {
       throw createError({ statusCode: 404, statusMessage: "Item not found" });
     }

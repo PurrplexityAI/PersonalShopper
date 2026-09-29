@@ -1,10 +1,10 @@
-import { repository } from "../../utils/db";
+import { withRepository } from "../../utils/db";
 import { evaluateItemCadence } from "~~/app/utils/cadence";
 
 export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event);
-    let items = await repository.getAll();
+    let items = await withRepository(event, (repo) => repo.getAll());
 
     if (query.q && typeof query.q === "string") {
       const q = query.q.toLowerCase().trim();

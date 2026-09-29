@@ -1,4 +1,4 @@
-import { repository } from "../../../utils/db";
+import { withRepository } from "../../../utils/db";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -6,11 +6,13 @@ export default defineEventHandler(async (event) => {
     if (!id) {
       throw createError({ statusCode: 400, statusMessage: "ID is required" });
     }
-    const current = await repository.getById(id);
-    if (!current) {
-      throw createError({ statusCode: 404, statusMessage: "Item not found" });
-    }
-    const updated = await repository.update(id, { inStock: !current.inStock });
+    const updated = await withRepository(event, async (repo) => {
+      const current = await repo.getById(id);
+      if (!current) {
+        throw createError({ statusCode: 404, statusMessage: "Item not found" });
+      }
+      return repo.update(id, { inStock: !current.inStock });
+    });
     return { success: true, data: updated };
   } catch (err) {
     if (err && typeof err === "object" && "statusCode" in err) throw err;

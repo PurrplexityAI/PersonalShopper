@@ -1,4 +1,4 @@
-import { repository } from "../../../utils/db";
+import { withRepository } from "../../../utils/db";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     if (!quantity || quantity < 1) {
       throw createError({ statusCode: 400, statusMessage: "Valid quantity is required" });
     }
-    const updated = await repository.updateShoppingQuantity(id, quantity);
+    const updated = await withRepository(event, (repo) => repo.updateShoppingQuantity(id, quantity));
     return { success: true, data: updated };
   } catch (err) {
     if (err && typeof err === "object" && "statusCode" in err) throw err;

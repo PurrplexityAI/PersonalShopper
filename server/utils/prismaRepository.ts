@@ -7,7 +7,7 @@ import type {
 } from "~~/shared/types";
 import type { PantryRepository } from "./repository";
 import { calculateNextDueDate, getFrequencyLabel, generateSuggestions } from "~~/app/utils/cadence";
-import { getDb, type DbClient } from "./prismaClient";
+import { createPrismaClient, type DbClient } from "./prismaClient";
 
 function toIsoString(val: unknown): string | null {
   if (!val) return null;
@@ -64,7 +64,7 @@ export class PrismaPantryRepository implements PantryRepository {
   private client: DbClient;
 
   constructor(client?: DbClient) {
-    this.client = client ?? getDb();
+    this.client = client ?? createPrismaClient();
   }
 
   async getAll(): Promise<PantryItem[]> {

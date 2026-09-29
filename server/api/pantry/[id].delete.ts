@@ -1,4 +1,4 @@
-import { repository } from "../../utils/db";
+import { withRepository } from "../../utils/db";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
     if (!id) {
       throw createError({ statusCode: 400, statusMessage: "ID is required" });
     }
-    const deleted = await repository.delete(id);
+    const deleted = await withRepository(event, (repo) => repo.delete(id));
     if (!deleted) {
       throw createError({ statusCode: 404, statusMessage: "Item not found" });
     }

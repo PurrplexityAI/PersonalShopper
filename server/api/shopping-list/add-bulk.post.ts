@@ -1,4 +1,4 @@
-import { repository } from "../../utils/db";
+import { withRepository } from "../../utils/db";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     if (!Array.isArray(itemIds)) {
       throw createError({ statusCode: 400, statusMessage: "itemIds array is required" });
     }
-    const updated = await repository.addBulkToShoppingList(itemIds);
+    const updated = await withRepository(event, (repo) => repo.addBulkToShoppingList(itemIds));
     return {
       success: true,
       data: updated,
