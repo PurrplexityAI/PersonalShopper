@@ -1,6 +1,6 @@
 export default defineNuxtConfig({
   ssr: false, // Pure client-side SPA mode (ready for Capacitor mobile build)
-  modules: ["@nuxt/ui", "@pinia/nuxt", "@nuxt/test-utils/module", "@nuxt/eslint"],
+  modules: ["@nuxt/ui", "@pinia/nuxt", "@vueuse/nuxt", "@nuxt/test-utils/module", "@nuxt/eslint"],
   css: ["~/assets/css/main.css"],
   future: {
     compatibilityVersion: 4,

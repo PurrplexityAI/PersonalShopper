@@ -104,6 +104,8 @@ async function handleSubmit() {
     v-model:open="store.isItemModalOpen"
     direction="right"
     :dismissible="false"
+    :close="true"
+    :handle="false"
     :title="store.editingItem ? 'Edit Pantry Item' : 'Add New Pantry Item'"
     :ui="{
       content: 'w-full max-w-full sm:w-auto sm:max-w-md h-full',
@@ -251,7 +253,7 @@ async function handleSubmit() {
     </template>
 
     <template #footer>
-      <div class="flex items-center justify-end space-x-2 w-full">
+      <div class="flex items-center justify-start space-x-2 w-full">
         <!-- Buttons swapped: Add to pantry / Save changes is first, Cancel is second -->
         <UButton
           color="primary"

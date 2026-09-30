@@ -91,15 +91,31 @@ export const usePantryStore = defineStore("pantry", {
 
   actions: {
     notify(title: string, description?: string, color: "success" | "error" | "info" = "success") {
+      // Only error toasts are enabled per specification
+      if (color !== "error") return;
       try {
+        const nuxtApp = useNuxtApp();
+        if (nuxtApp?.runWithContext) {
+          nuxtApp.runWithContext(() => {
+            const toast = useToast();
+            toast?.add?.({
+              title,
+              description,
+              color: "error",
+              icon: "i-lucide-alert-circle",
+            });
+          });
+          return;
+        }
         const toast = useToast();
-        toast.add({
+        toast?.add?.({
           title,
           description,
-          color: color === "error" ? "error" : color === "info" ? "neutral" : "success",
+          color: "error",
+          icon: "i-lucide-alert-circle",
         });
       } catch {
-        // Fallback if toast context is not initialized (e.g. testing)
+        // In SSR / headless test environments where useToast may not be available
       }
     },
 
@@ -249,7 +265,7 @@ export const usePantryStore = defineStore("pantry", {
       category?: string;
       frequencyDays?: number;
       unit?: string;
-    }) {
+    }): Promise<PantryItem | null> {
       try {
         const res = await $fetch<{ success: boolean; data: PantryItem; message: string; createdInPantry: boolean }>(
           "/api/shopping-list/add",
@@ -258,10 +274,12 @@ export const usePantryStore = defineStore("pantry", {
             body: payload,
           }
         );
-        this.notify(res.message, undefined, "success");
         await this.loadData(true);
+        return res.data;
       } catch (err) {
+        console.error("Failed to add item", err);
         this.notify("Failed to add item", getErrorMessage(err), "error");
+        return null;
       }
     },
 
@@ -280,9 +298,9 @@ export const usePantryStore = defineStore("pantry", {
         await $fetch(`/api/shopping-list/${item.id}/check`, {
           method: "POST",
         });
-        this.notify(`Bought "${item.name}"! In stock & cadence timer reset.`, undefined, "success");
         await this.loadData(true);
       } catch (err) {
+        console.error("Failed to tick off item", err);
         this.notify("Failed to tick off item", getErrorMessage(err), "error");
       }
     },
@@ -294,21 +312,29 @@ export const usePantryStore = defineStore("pantry", {
           method: "POST",
           body: { nameOrId: item.id, quantity: 1 },
         });
-        this.notify(`Moved "${item.name}" back to shopping list.`, undefined, "info");
         await this.loadData(true);
       } catch (err) {
+        console.error("Failed to move item back to shopping list", err);
         this.notify("Failed to move item back to shopping list", getErrorMessage(err), "error");
       }
     },
 
     async deleteFromShoppingList(item: PantryItem) {
       try {
+        const currentScroll = typeof window !== "undefined" ? window.scrollY : 0;
+        // Optimistic UI update so scroll doesn't snap and UI is instant
+        const found = this.items.find((i) => i.id === item.id);
+        if (found) found.inShoppingList = false;
+
         await $fetch(`/api/shopping-list/${item.id}`, {
           method: "DELETE",
         });
-        this.notify(`Removed "${item.name}" from shopping list (didn't buy).`, undefined, "info");
         await this.loadData(true);
+        if (typeof window !== "undefined" && window.scrollY !== currentScroll) {
+          window.scrollTo({ top: currentScroll, behavior: "instant" });
+        }
       } catch (err) {
+        console.error("Failed to remove item", err);
         this.notify("Failed to remove item", getErrorMessage(err), "error");
       }
     },

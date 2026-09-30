@@ -155,5 +155,14 @@ describe("ShoppingListItemCard component", () => {
       const deleteBtn = wrapper.find("button[aria-label=\"Didn't buy it\"]");
       expect(deleteBtn.exists()).toBe(false);
     });
+
+    it("has tabindex -1 on delete button to avoid focus capture", async () => {
+      const wrapper = await mountSuspended(ShoppingListItemCard, {
+        props: { item: baseItem, hideDelete: false },
+      });
+
+      const deleteBtn = wrapper.find("button[aria-label=\"Didn't buy it\"]");
+      expect(deleteBtn.attributes("tabindex")).toBe("-1");
+    });
   });
 });

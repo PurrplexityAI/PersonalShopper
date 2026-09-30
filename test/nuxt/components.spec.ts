@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import CategorySelect from "~~/app/components/CategorySelect.vue";
 import PantrySortSelect from "~~/app/components/PantrySortSelect.vue";
@@ -103,6 +103,27 @@ describe("PantryView component", () => {
     expect(wrapper.text()).toContain("Due for restock");
     expect(wrapper.text()).not.toContain("All Items");
     expect(wrapper.text()).not.toContain("In Stock (");
+  });
+
+  it("resets viewport display to top when filter changes", async () => {
+    const scrollToSpy = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    const store = usePantryStore();
+    await mountSuspended((await import("~~/app/components/PantryView.vue")).default);
+
+    store.searchQuery = "Coffee";
+    await nextTick();
+
+    expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, behavior: "instant" });
+    scrollToSpy.mockRestore();
+  });
+
+  it("only applies border and shadow to sticky panel when scrolled past top", async () => {
+    const wrapper = await mountSuspended((await import("~~/app/components/PantryView.vue")).default);
+    const stickyPanel = wrapper.find(".sticky");
+    expect(stickyPanel.exists()).toBe(true);
+    expect(stickyPanel.classes()).toContain("shadow-none");
+    expect(stickyPanel.classes()).toContain("border-transparent");
+    expect(stickyPanel.classes()).not.toContain("shadow-xs");
   });
 });
 

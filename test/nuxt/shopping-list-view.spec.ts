@@ -71,4 +71,29 @@ describe("ShoppingListView component", () => {
       expect(purchasedSection.text()).toContain("1");
     });
   });
+
+  describe("Desktop clipped layout & add item UI", () => {
+    it("renders the fixed bottom add bar with bg-muted clipping and top padding", async () => {
+      const wrapper = await mountSuspended(ShoppingListView);
+      const addRegion = wrapper.find(".hidden.sm\\:block.fixed.bottom-0");
+      expect(addRegion.exists()).toBe(true);
+      expect(addRegion.classes()).toContain("bg-muted");
+      expect(addRegion.classes()).toContain("pt-4");
+      expect(addRegion.classes()).toContain("pb-4");
+    });
+
+    it("configures UInputMenu with search type and autocomplete off to prevent browser autofill", async () => {
+      const wrapper = await mountSuspended(ShoppingListView);
+      const desktopInput = wrapper.find(".hidden.sm\\:block input");
+      expect(desktopInput.exists()).toBe(true);
+      expect(desktopInput.attributes("type")).toBe("search");
+      expect(desktopInput.attributes("autocomplete")).toBe("off");
+    });
+
+    it("renders shopping list title and items in normal page scrolling flow with bottom clearance", async () => {
+      const wrapper = await mountSuspended(ShoppingListView);
+      expect(wrapper.classes()).toContain("pb-36");
+      expect(wrapper.text()).toContain("Shopping list");
+    });
+  });
 });

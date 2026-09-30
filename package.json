@@ -26,6 +26,7 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.20.2",
     "@vue/test-utils": "^2.5.1",
+    "@vueuse/nuxt": "^15.0.0",
     "eslint": "^10.11.0",
     "happy-dom": "^20.14.5",
     "prisma": "^8.0.0-rc.17",

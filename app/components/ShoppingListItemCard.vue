@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nextTick } from "vue";
 import { usePantryStore } from "~~/app/stores/pantry";
 import type { PantryItem } from "~~/shared/types";
 
@@ -8,7 +9,7 @@ interface Props {
   hideDelete?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   checked: false,
   hideDelete: false,
 });
@@ -18,6 +19,20 @@ defineEmits<{
 }>();
 
 const store = usePantryStore();
+
+function handleDelete(e: Event) {
+  const currentScroll = typeof window !== "undefined" ? window.scrollY : 0;
+  (e.currentTarget as HTMLElement)?.blur();
+  if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+  store.deleteFromShoppingList(props.item);
+  nextTick(() => {
+    if (typeof window !== "undefined" && window.scrollY !== currentScroll) {
+      window.scrollTo({ top: currentScroll, behavior: "instant" });
+    }
+  });
+}
 </script>
 
 <template>
@@ -35,6 +50,7 @@ const store = usePantryStore();
           ]"
           :title="checked ? 'Mark unpurchased (add back to shopping list)' : 'Tick off (Bought - reset cadence & mark in stock)'"
           :aria-label="checked ? 'Mark unpurchased' : 'Tick off'"
+          @mousedown.prevent
           @click="$emit('toggle-check')"
         >
           <UIcon
@@ -72,9 +88,11 @@ const store = usePantryStore();
           variant="ghost"
           size="md"
           icon="i-lucide-trash-2"
+          tabindex="-1"
           title="Didn't buy it (Remove from list without resetting cadence)"
           aria-label="Didn't buy it"
-          @click="store.deleteFromShoppingList(item)"
+          @mousedown.prevent
+          @click.stop.prevent="handleDelete"
         />
       </div>
     </div>

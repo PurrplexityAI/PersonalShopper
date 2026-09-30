@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, nextTick } from "vue";
+import { ref, computed, nextTick, watch } from "vue";
+import { useFocus } from "@vueuse/core";
 import { usePantryStore } from "~~/app/stores/pantry";
 import type { PantryItem } from "~~/shared/types";
 import { sortPantryItems, type PantrySortOption } from "~~/app/utils/sort";
@@ -38,9 +39,39 @@ const newCadence = ref(30); // Default to Monthly (30d)
 const hasChosenNewCadence = ref(false);
 
 const isDesktopInputFocused = ref(false);
-const isMobileInputFocused = ref(false);
+const desktopInputRef = ref<{ inputRef?: HTMLInputElement | null; $el?: HTMLElement } | null>(null);
+
+const desktopInputElement = computed(() => {
+  return desktopInputRef.value?.inputRef || desktopInputRef.value?.$el?.querySelector("input") || null;
+});
+
+function focusDesktopInput() {
+  nextTick(() => {
+    isDesktopInputFocused.value = true;
+    desktopInputElement.value?.focus();
+  });
+  setTimeout(() => {
+    desktopInputElement.value?.focus();
+  }, 50);
+}
+
 const isMobileDrawerOpen = ref(false);
 const mobileInputRef = ref<{ inputRef?: HTMLInputElement | null; $el?: HTMLElement } | null>(null);
+
+const mobileInputElement = computed(() => {
+  return mobileInputRef.value?.inputRef || mobileInputRef.value?.$el?.querySelector("input") || null;
+});
+
+const { focused: isMobileInputFocused } = useFocus(mobileInputElement);
+
+watch(isMobileDrawerOpen, (isOpen) => {
+  if (isOpen) {
+    setTimeout(() => {
+      isMobileInputFocused.value = true;
+      mobileInputElement.value?.focus();
+    }, 400);
+  }
+});
 
 const availableCategories = computed(() => {
   const defaultCats = [
@@ -115,17 +146,37 @@ function smoothScrollToItem(itemId: string) {
   });
 }
 
+async function selectItem(item: PantryItem, e?: Event) {
+  e?.preventDefault();
+  if (selectedCategory.value !== null && selectedCategory.value !== item.category) {
+    selectedCategory.value = null;
+  }
+  if (item.inShoppingList) {
+    smoothScrollToItem(item.id);
+  } else {
+    const added = await store.addToShoppingList({ nameOrId: item.id, quantity: 1 });
+    if (added) {
+      smoothScrollToItem(added.id);
+    } else {
+      smoothScrollToItem(item.id);
+    }
+  }
+  nextTick(() => {
+    resetInput();
+    focusDesktopInput();
+  });
+  setTimeout(() => {
+    resetInput();
+    focusDesktopInput();
+  }, 50);
+}
+
 const autocompleteItems = computed(() => {
   return store.items.map((item) => ({
     label: item.name,
     value: item.name,
-    onSelect: () => {
-      if (item.inShoppingList) {
-        smoothScrollToItem(item.id);
-      } else {
-        store.addToShoppingList({ nameOrId: item.id, quantity: 1 });
-      }
-      resetInput();
+    onSelect: (e?: Event) => {
+      selectItem(item, e);
     },
   }));
 });
@@ -139,8 +190,12 @@ async function handleSubmitInput() {
     (i) => i.name.toLowerCase() === trimmed.toLowerCase()
   );
   if (existingOnShoppingList) {
+    if (selectedCategory.value !== null && selectedCategory.value !== existingOnShoppingList.category) {
+      selectedCategory.value = null;
+    }
     smoothScrollToItem(existingOnShoppingList.id);
     resetInput();
+    focusDesktopInput();
     return;
   }
 
@@ -149,29 +204,40 @@ async function handleSubmitInput() {
     (i) => i.name.toLowerCase() === trimmed.toLowerCase()
   );
   if (existingInPantry) {
-    await store.addToShoppingList({ nameOrId: existingInPantry.id, quantity: 1 });
+    if (selectedCategory.value !== null && selectedCategory.value !== existingInPantry.category) {
+      selectedCategory.value = null;
+    }
+    const added = await store.addToShoppingList({ nameOrId: existingInPantry.id, quantity: 1 });
+    if (added) {
+      smoothScrollToItem(added.id);
+    } else {
+      smoothScrollToItem(existingInPantry.id);
+    }
     resetInput();
+    focusDesktopInput();
     return;
   }
 
   // 3. Brand new item -> create in pantry & add to shopping list
-  await store.addToShoppingList({
+  if (selectedCategory.value !== null && selectedCategory.value !== newCategory.value) {
+    selectedCategory.value = null;
+  }
+  const added = await store.addToShoppingList({
     nameOrId: trimmed,
     quantity: 1,
     category: newCategory.value,
     frequencyDays: newCadence.value,
   });
+  if (added) {
+    smoothScrollToItem(added.id);
+  }
   resetInput();
+  focusDesktopInput();
 }
 
 function openMobileDrawer() {
+  resetInput();
   isMobileDrawerOpen.value = true;
-  nextTick(() => {
-    setTimeout(() => {
-      const inputEl = mobileInputRef.value?.$el?.querySelector("input") || mobileInputRef.value?.inputRef;
-      inputEl?.focus();
-    }, 120);
-  });
 }
 
 async function handleAddAllSuggestions() {
@@ -220,11 +286,39 @@ async function handleUncheck(item: PantryItem) {
 </script>
 
 <template>
-  <div class="space-y-4 pb-36 sm:pb-28">
-    <!-- Screen Header Component -->
-    <AppScreenHeader title="Shopping list" />
+  <div class="space-y-4 pb-36 sm:pb-36">
+    <!-- Screen Header Component (Desktop Category & Sort in Actions Slot) -->
+    <div class="space-y-4">
+      <AppScreenHeader title="Shopping list">
+        <template #actions>
+          <div class="hidden sm:flex items-center gap-2">
+            <CategorySelect
+              v-model="selectedCategory"
+              class="w-48"
+            />
+            <PantrySortSelect
+              v-model="sortBy"
+              :show-next-due="false"
+              class="w-48"
+            />
+          </div>
+        </template>
+      </AppScreenHeader>
 
-    <!-- Cadence Suggestions Section -->
+      <!-- Mobile Category & Sort Beneath Title -->
+      <div class="sm:hidden flex items-center gap-2 w-full min-w-0">
+        <CategorySelect
+          v-model="selectedCategory"
+          class="flex-1 min-w-0"
+        />
+        <PantrySortSelect
+          v-model="sortBy"
+          :show-next-due="false"
+          class="flex-1 min-w-0"
+        />
+      </div>
+    </div>
+      <!-- Cadence Suggestions Section -->
     <div
       v-if="store.suggestions.length > 0"
       class="bg-warning/10 border border-warning/30 rounded-2xl p-4 shadow-xs transition-all"
@@ -324,34 +418,8 @@ async function handleUncheck(item: PantryItem) {
       </div>
     </div>
 
-    <!-- Active Shopping List Section -->
+    <!-- Active Shopping List Items -->
     <div class="space-y-3">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
-        <div class="flex items-center space-x-2">
-          <h2 class="font-bold text-highlighted">Shopping list</h2>
-          <UBadge
-            color="neutral"
-            variant="soft"
-            size="md"
-          >
-            {{ displayedShoppingList.length }} item(s)
-          </UBadge>
-        </div>
-
-        <!-- Category & Sort Selects -->
-        <div class="flex items-center gap-2 w-full sm:w-auto min-w-0 justify-start sm:justify-end">
-          <CategorySelect
-            v-model="selectedCategory"
-            class="flex-1 min-w-0 sm:flex-none sm:w-48"
-          />
-          <PantrySortSelect
-            v-model="sortBy"
-            :show-next-due="false"
-            class="flex-1 min-w-0 sm:flex-none sm:w-48"
-          />
-        </div>
-      </div>
-
       <!-- Empty State: Entire Shopping List is Empty -->
       <div
         v-if="store.shoppingList.length === 0"
@@ -462,51 +530,67 @@ async function handleUncheck(item: PantryItem) {
       </UCollapsible>
     </div>
 
-    <!-- Desktop Add Item Fixed Bottom Bar -->
-    <div class="hidden sm:block fixed bottom-0 left-0 right-0 z-30 bg-default/95 backdrop-blur-md border-t border-default py-3.5 px-4 shadow-lg">
-      <div class="max-w-5xl mx-auto w-full">
-        <UInputMenu
-          v-model="quickInput"
-          mode="autocomplete"
-          :items="autocompleteItems"
-          value-key="value"
-          :content="{ hideWhenEmpty: true }"
-          placeholder="Add an item to the shopping list"
-          :icon="isDesktopInputFocused ? 'i-lucide-circle' : 'i-lucide-plus'"
-          size="lg"
-          class="w-full"
-          @focus="isDesktopInputFocused = true"
-          @blur="isDesktopInputFocused = false"
-          @keydown.enter.prevent="handleSubmitInput"
+    <!-- Desktop Add Item Fixed Bottom Bar (Fixed to bottom, bg-muted provides clipping, generous top padding) -->
+    <div class="hidden sm:block fixed bottom-0 left-0 right-0 z-30 bg-muted pt-4 pb-4">
+      <div class="max-w-5xl w-full mx-auto px-4">
+        <!-- Unified Input Box with buttons side-by-side inside so input respects space occupied by buttons -->
+        <div
+          class="flex items-center w-full bg-default rounded-xl ring ring-default focus-within:ring-primary shadow-sm transition-all p-1 gap-2"
+          :class="{ 'ring-primary': isDesktopInputFocused }"
         >
-          <template #trailing>
-            <div v-if="quickInput.trim().length > 0" class="flex items-center gap-1.5 mr-1">
-              <!-- Category Dropdown Button -->
-              <UDropdownMenu :items="categoryMenuItems">
-                <UButton
-                  color="neutral"
-                  variant="subtle"
-                  size="xs"
-                  icon="i-lucide-tag"
-                  :label="hasChosenNewCategory ? newCategory : undefined"
-                  title="Category"
-                />
-              </UDropdownMenu>
+          <UInputMenu
+            ref="desktopInputRef"
+            v-model="quickInput"
+            mode="autocomplete"
+            type="search"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="sentences"
+            spellcheck="false"
+            name="desktop-add-shopping-item"
+            data-1p-ignore="true"
+            data-lpignore="true"
+            data-form-type="other"
+            :items="quickInput.trim() ? autocompleteItems : []"
+            value-key="value"
+            :content="{ side: 'top', align: 'start', hideWhenEmpty: true }"
+            placeholder="Add an item to the shopping list"
+            :icon="isDesktopInputFocused ? 'i-lucide-circle' : 'i-lucide-plus'"
+            variant="none"
+            size="lg"
+            class="flex-1 min-w-0"
+            @focus="isDesktopInputFocused = true"
+            @blur="isDesktopInputFocused = false"
+            @keydown.enter.prevent="handleSubmitInput"
+          />
 
-              <!-- Cadence Dropdown Button -->
-              <UDropdownMenu :items="cadenceMenuItems">
-                <UButton
-                  color="neutral"
-                  variant="subtle"
-                  size="xs"
-                  icon="i-lucide-repeat"
-                  :label="hasChosenNewCadence ? selectedCadenceLabel : undefined"
-                  title="Cadence frequency"
-                />
-              </UDropdownMenu>
-            </div>
-          </template>
-        </UInputMenu>
+          <!-- Action buttons inline inside container, respecting text area -->
+          <div v-if="quickInput.trim().length > 0" class="flex items-center gap-1.5 shrink-0 pe-2">
+            <!-- Category Dropdown Button -->
+            <UDropdownMenu :items="categoryMenuItems">
+              <UButton
+                color="neutral"
+                variant="subtle"
+                size="xs"
+                icon="i-lucide-tag"
+                :label="hasChosenNewCategory ? newCategory : undefined"
+                title="Category"
+              />
+            </UDropdownMenu>
+
+            <!-- Cadence Dropdown Button -->
+            <UDropdownMenu :items="cadenceMenuItems">
+              <UButton
+                color="neutral"
+                variant="subtle"
+                size="xs"
+                icon="i-lucide-repeat"
+                :label="hasChosenNewCadence ? selectedCadenceLabel : undefined"
+                title="Cadence frequency"
+              />
+            </UDropdownMenu>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -523,10 +607,11 @@ async function handleUncheck(item: PantryItem) {
       />
     </div>
 
-    <!-- Mobile Add Item Bottom Drawer -->
+    <!-- Mobile Add Item Bottom Drawer (no handle, useFocus for input, reset on open) -->
     <UDrawer
       v-model:open="isMobileDrawerOpen"
       direction="bottom"
+      :handle="false"
       :ui="{ container: 'p-4 gap-3' }"
     >
       <template #body>
@@ -537,15 +622,22 @@ async function handleUncheck(item: PantryItem) {
               ref="mobileInputRef"
               v-model="quickInput"
               mode="autocomplete"
-              :items="autocompleteItems"
+              type="search"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="sentences"
+              spellcheck="false"
+              name="mobile-add-shopping-item"
+              data-1p-ignore="true"
+              data-lpignore="true"
+              data-form-type="other"
+              :items="quickInput.trim() ? autocompleteItems : []"
               value-key="value"
-              :content="{ hideWhenEmpty: true }"
+              :content="{ side: 'top', align: 'start', hideWhenEmpty: true }"
               placeholder="Add an item to the shopping list"
               :icon="isMobileInputFocused ? 'i-lucide-circle' : 'i-lucide-plus'"
               size="lg"
               class="flex-1"
-              @focus="isMobileInputFocused = true"
-              @blur="isMobileInputFocused = false"
               @keydown.enter.prevent="handleSubmitInput"
             />
             <UButton
@@ -560,7 +652,7 @@ async function handleUncheck(item: PantryItem) {
             />
           </div>
 
-          <!-- Category and Frequency Buttons on their own row -->
+          <!-- Category and Frequency Buttons on their own row beneath input -->
           <div class="flex items-center gap-2">
             <!-- Category Button with initial 'Category' label -->
             <UDropdownMenu :items="categoryMenuItems">
