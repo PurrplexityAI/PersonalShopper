@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
 import { usePantryStore } from "~~/app/stores/pantry";
-import AppHeader from "~~/app/components/AppHeader.vue";
 import AppNavbar from "~~/app/components/AppNavbar.vue";
 import ShoppingListView from "~~/app/components/ShoppingListView.vue";
 import PantryView from "~~/app/components/PantryView.vue";
 import SuggestionsView from "~~/app/components/SuggestionsView.vue";
 import ItemModal from "~~/app/components/ItemModal.vue";
-import DataModal from "~~/app/components/DataModal.vue";
 
 const store = usePantryStore();
 
@@ -19,14 +17,11 @@ onMounted(() => {
 <template>
   <UApp>
     <div class="min-h-screen bg-muted flex flex-col font-sans">
-      <!-- Top Header -->
-      <AppHeader />
-
       <!-- Main Navigation (Desktop Top & Mobile Bottom) -->
       <AppNavbar />
 
       <!-- Main Content Area -->
-      <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-4 sm:py-6">
+      <main class="flex-1 max-w-5xl w-full mx-auto px-4 pt-2 sm:pt-16 pb-4 sm:pb-6">
         <div v-if="store.isLoading" class="flex flex-col items-center justify-center py-20 space-y-3 text-muted">
           <div class="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
           <p class="font-medium">Loading your pantry & shopping list...</p>
@@ -39,11 +34,8 @@ onMounted(() => {
         </template>
       </main>
 
-      <!-- Add / Edit Item Modal -->
+      <!-- Add / Edit Item Drawer (Desktop Right Drawer / Mobile Full Screen) -->
       <ItemModal />
-
-      <!-- Data / Backup / Mobile Guide Modal -->
-      <DataModal />
     </div>
   </UApp>
 </template>

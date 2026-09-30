@@ -95,5 +95,31 @@ describe("PantryView component", () => {
     expect(wrapper.text()).toContain("Olive Oil");
     expect(wrapper.text()).toContain("Pantry Staples");
     expect(wrapper.findComponent({ name: "PantryItemCard" }).exists()).toBe(true);
+
+    // Verify sentence-cased status filter buttons
+    expect(wrapper.text()).toContain("All items");
+    expect(wrapper.text()).toContain("In stock");
+    expect(wrapper.text()).toContain("Out of stock");
+    expect(wrapper.text()).toContain("Due for restock");
+    expect(wrapper.text()).not.toContain("All Items");
+    expect(wrapper.text()).not.toContain("In Stock (");
+  });
+});
+
+describe("AppScreenHeader component", () => {
+  it("renders screen title in text-xl and context menu button", async () => {
+    const AppScreenHeader = (await import("~~/app/components/AppScreenHeader.vue")).default;
+    const wrapper = await mountSuspended(AppScreenHeader, {
+      props: {
+        title: "Pantry",
+      },
+    });
+
+    expect(wrapper.find("h1").exists()).toBe(true);
+    expect(wrapper.find("h1").text()).toBe("Pantry");
+    expect(wrapper.find("h1").classes()).toContain("text-xl");
+
+    const contextBtn = wrapper.find("button[aria-label='Screen context menu']");
+    expect(contextBtn.exists()).toBe(true);
   });
 });

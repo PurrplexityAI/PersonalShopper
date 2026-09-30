@@ -160,11 +160,6 @@ describe("Pinia Pantry Store", () => {
     store.closeItemModal();
     expect(store.isItemModalOpen).toBe(false);
     expect(store.editingItem).toBeNull();
-
-    store.openDataModal();
-    expect(store.isDataModalOpen).toBe(true);
-    store.closeDataModal();
-    expect(store.isDataModalOpen).toBe(false);
   });
 
   it("handles setStock correctly", async () => {

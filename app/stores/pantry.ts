@@ -29,7 +29,6 @@ export const usePantryStore = defineStore("pantry", {
     sessionPurchased: [] as Array<{ id: string; name: string; timestamp: string }>,
     isItemModalOpen: false,
     editingItem: null as PantryItem | null,
-    isDataModalOpen: false,
   }),
 
   getters: {
@@ -175,14 +174,6 @@ export const usePantryStore = defineStore("pantry", {
     closeItemModal() {
       this.isItemModalOpen = false;
       this.editingItem = null;
-    },
-
-    openDataModal() {
-      this.isDataModalOpen = true;
-    },
-
-    closeDataModal() {
-      this.isDataModalOpen = false;
     },
 
     clearSessionPurchased() {

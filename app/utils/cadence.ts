@@ -1,5 +1,21 @@
 import type { PantryItem, ShoppingSuggestion, UrgencyLevel } from "~~/shared/types";
 
+export interface CadenceOption {
+  days: number;
+  label: string;
+}
+
+export const CADENCE_OPTIONS: CadenceOption[] = [
+  { days: 1, label: "Daily" },
+  { days: 3, label: "Every 3 days" },
+  { days: 7, label: "Weekly (7d)" },
+  { days: 14, label: "Every 2 weeks (14d)" },
+  { days: 21, label: "Every 3 weeks" },
+  { days: 30, label: "Monthly (30d)" },
+  { days: 60, label: "Every 2 months" },
+  { days: 90, label: "Quarterly (90d)" },
+];
+
 /**
  * Returns a human-friendly label for a given frequency in days.
  */

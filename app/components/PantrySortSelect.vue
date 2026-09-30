@@ -56,6 +56,8 @@ watch(shouldShowNextDue, (show) => {
     :icon="icon"
     value-key="value"
     label-key="label"
+    class="w-full min-w-0"
+    :ui="{ base: 'w-full min-w-0', value: 'truncate min-w-0' }"
     v-bind="$attrs"
   />
 </template>

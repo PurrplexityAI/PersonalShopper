@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, nextTick } from "vue";
 import { usePantryStore } from "~~/app/stores/pantry";
 import type { PantryItem } from "~~/shared/types";
 import { sortPantryItems, type PantrySortOption } from "~~/app/utils/sort";
+import { CADENCE_OPTIONS } from "~~/app/utils/cadence";
+import AppScreenHeader from "./AppScreenHeader.vue";
+import CategorySelect from "./CategorySelect.vue";
+import PantrySortSelect from "./PantrySortSelect.vue";
+import ShoppingListItemCard from "./ShoppingListItemCard.vue";
 
 const store = usePantryStore();
 
@@ -22,55 +27,151 @@ const displayedShoppingList = computed(() => {
   return sortPantryItems(filteredShoppingList.value, sortBy.value);
 });
 
+// Quick Add State
 const quickInput = ref("");
 const showSuggestions = ref(true);
-const newCadence = ref(7);
+
 const newCategory = ref("General");
-const showNewItemPrompt = ref(false);
+const hasChosenNewCategory = ref(false);
 
-const CADENCE_OPTIONS = [
-  { label: "Every 3 days", value: 3 },
-  { label: "Weekly (7d)", value: 7 },
-  { label: "Every 2 weeks (14d)", value: 14 },
-  { label: "Every 3 weeks", value: 21 },
-  { label: "Monthly (30d)", value: 30 },
-];
+const newCadence = ref(30); // Default to Monthly (30d)
+const hasChosenNewCadence = ref(false);
 
-const trimmedInput = computed(() => quickInput.value.trim().toLowerCase());
+const isDesktopInputFocused = ref(false);
+const isMobileInputFocused = ref(false);
+const isMobileDrawerOpen = ref(false);
+const mobileInputRef = ref<{ inputRef?: HTMLInputElement | null; $el?: HTMLElement } | null>(null);
 
-const existingMatches = computed(() => {
-  if (!trimmedInput.value) return [];
-  return store.items.filter(
-    (p) => p.name.toLowerCase().includes(trimmedInput.value) && !p.inShoppingList
-  );
+const availableCategories = computed(() => {
+  const defaultCats = [
+    "General",
+    "Produce",
+    "Dairy & Eggs",
+    "Bakery",
+    "Meat & Seafood",
+    "Pantry Staples",
+    "Beverages",
+    "Snacks",
+    "Household",
+    "Personal Care",
+  ];
+  return Array.from(new Set([...defaultCats, ...store.categories])).filter(Boolean);
 });
 
-const exactMatch = computed(() => {
-  if (!trimmedInput.value) return null;
-  return store.items.find((p) => p.name.toLowerCase() === trimmedInput.value);
+const categoryMenuItems = computed(() => [
+  availableCategories.value.map((cat) => ({
+    label: cat,
+    type: "checkbox" as const,
+    checked: newCategory.value === cat,
+    onSelect: () => {
+      newCategory.value = cat;
+      hasChosenNewCategory.value = true;
+    },
+  })),
+]);
+
+const cadenceMenuItems = computed(() => [
+  CADENCE_OPTIONS.map((opt) => ({
+    label: opt.label,
+    type: "checkbox" as const,
+    checked: newCadence.value === opt.days,
+    onSelect: () => {
+      newCadence.value = opt.days;
+      hasChosenNewCadence.value = true;
+    },
+  })),
+]);
+
+const selectedCadenceLabel = computed(() => {
+  const found = CADENCE_OPTIONS.find((opt) => opt.days === newCadence.value);
+  return found?.label || `${newCadence.value}d`;
 });
 
-async function handleQuickAdd() {
-  if (!quickInput.value.trim()) return;
-
-  if (exactMatch.value) {
-    await store.addToShoppingList({ nameOrId: exactMatch.value.id, quantity: 1 });
-  } else {
-    await store.addToShoppingList({
-      nameOrId: quickInput.value.trim(),
-      quantity: 1,
-      frequencyDays: newCadence.value,
-      category: newCategory.value,
-    });
-  }
+function resetInput() {
   quickInput.value = "";
-  showNewItemPrompt.value = false;
+  newCategory.value = "General";
+  hasChosenNewCategory.value = false;
+  newCadence.value = 30;
+  hasChosenNewCadence.value = false;
+  isMobileDrawerOpen.value = false;
 }
 
-async function handleSelectExisting(item: PantryItem) {
-  await store.addToShoppingList({ nameOrId: item.id, quantity: 1 });
-  quickInput.value = "";
-  showNewItemPrompt.value = false;
+function smoothScrollToItem(itemId: string) {
+  // If target item is in a category that's filtered out, clear filter so the card is rendered
+  const target = store.shoppingList.find((i) => i.id === itemId);
+  if (target && selectedCategory.value !== null && target.category !== selectedCategory.value) {
+    selectedCategory.value = null;
+  }
+
+  nextTick(() => {
+    const el = document.getElementById(`shopping-item-${itemId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-primary", "transition-all");
+      setTimeout(() => {
+        el.classList.remove("ring-2", "ring-primary");
+      }, 1800);
+    }
+  });
+}
+
+const autocompleteItems = computed(() => {
+  return store.items.map((item) => ({
+    label: item.name,
+    value: item.name,
+    onSelect: () => {
+      if (item.inShoppingList) {
+        smoothScrollToItem(item.id);
+      } else {
+        store.addToShoppingList({ nameOrId: item.id, quantity: 1 });
+      }
+      resetInput();
+    },
+  }));
+});
+
+async function handleSubmitInput() {
+  const trimmed = quickInput.value.trim();
+  if (!trimmed) return;
+
+  // 1. If already in shopping list -> smooth scroll to it
+  const existingOnShoppingList = store.shoppingList.find(
+    (i) => i.name.toLowerCase() === trimmed.toLowerCase()
+  );
+  if (existingOnShoppingList) {
+    smoothScrollToItem(existingOnShoppingList.id);
+    resetInput();
+    return;
+  }
+
+  // 2. If exists in pantry (not yet in shopping list) -> add it
+  const existingInPantry = store.items.find(
+    (i) => i.name.toLowerCase() === trimmed.toLowerCase()
+  );
+  if (existingInPantry) {
+    await store.addToShoppingList({ nameOrId: existingInPantry.id, quantity: 1 });
+    resetInput();
+    return;
+  }
+
+  // 3. Brand new item -> create in pantry & add to shopping list
+  await store.addToShoppingList({
+    nameOrId: trimmed,
+    quantity: 1,
+    category: newCategory.value,
+    frequencyDays: newCadence.value,
+  });
+  resetInput();
+}
+
+function openMobileDrawer() {
+  isMobileDrawerOpen.value = true;
+  nextTick(() => {
+    setTimeout(() => {
+      const inputEl = mobileInputRef.value?.$el?.querySelector("input") || mobileInputRef.value?.inputRef;
+      inputEl?.focus();
+    }, 120);
+  });
 }
 
 async function handleAddAllSuggestions() {
@@ -119,84 +220,9 @@ async function handleUncheck(item: PantryItem) {
 </script>
 
 <template>
-  <div class="space-y-4 pb-20 sm:pb-8">
-    <!-- Quick Add Bar -->
-    <div class="bg-default rounded-2xl border border-default p-4 shadow-xs">
-      <form class="flex gap-2" @submit.prevent="handleQuickAdd">
-        <UInput
-          v-model="quickInput"
-          placeholder="Add item to shopping list (e.g. Milk, Apples, Bread)..."
-          class="flex-1"
-          size="md"
-          @input="showNewItemPrompt = true"
-        />
-        <UButton
-          type="submit"
-          color="primary"
-          :disabled="!quickInput.trim()"
-          icon="i-lucide-plus"
-          class="shrink-0"
-        >
-          <span class="hidden sm:inline">Add Item</span>
-          <span class="sm:hidden">Add</span>
-        </UButton>
-      </form>
-
-      <!-- Real-time Suggestions / Pantry matches when typing -->
-      <div v-if="quickInput.trim().length > 0 && showNewItemPrompt" class="mt-3 pt-3 border-t border-default space-y-2">
-        <!-- Existing pantry items match -->
-        <div v-if="existingMatches.length > 0">
-          <p class="font-semibold text-muted uppercase tracking-wider mb-1.5">
-            Select from existing pantry:
-          </p>
-          <div class="flex flex-wrap gap-1.5">
-            <UButton
-              v-for="match in existingMatches.slice(0, 5)"
-              :key="match.id"
-              type="button"
-              color="neutral"
-              variant="outline"
-              size="md"
-              @click="handleSelectExisting(match)"
-            >
-              <span>{{ match.name }}</span>
-              <span class="text-dimmed">({{ match.frequencyLabel }})</span>
-            </UButton>
-          </div>
-        </div>
-
-        <!-- Brand new item creation config -->
-        <div v-if="!exactMatch" class="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
-          <div class="flex items-center space-x-1.5 text-highlighted font-medium">
-            <UIcon name="i-lucide-plus-circle" class="w-4 h-4 text-primary shrink-0" />
-            <span>
-              <strong>"{{ quickInput.trim() }}"</strong> will be added to your shopping list & created in your pantry.
-            </span>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-4 pt-1">
-            <UFormField label="Category" orientation="horizontal" size="md">
-              <USelect
-                v-model="newCategory"
-                :items="store.categories"
-                size="md"
-                class="w-40"
-              />
-            </UFormField>
-
-            <UFormField label="Buy Cadence" orientation="horizontal" size="md">
-              <USelect
-                v-model.number="newCadence"
-                :items="CADENCE_OPTIONS"
-                value-key="value"
-                size="md"
-                class="w-48 font-medium"
-              />
-            </UFormField>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="space-y-4 pb-36 sm:pb-28">
+    <!-- Screen Header Component -->
+    <AppScreenHeader title="Shopping list" />
 
     <!-- Cadence Suggestions Section -->
     <div
@@ -312,16 +338,16 @@ async function handleUncheck(item: PantryItem) {
           </UBadge>
         </div>
 
-        <!-- Category & Sort Selects (aligned right on desktop, wraps on mobile) -->
-        <div class="flex items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
+        <!-- Category & Sort Selects -->
+        <div class="flex items-center gap-2 w-full sm:w-auto min-w-0 justify-start sm:justify-end">
           <CategorySelect
             v-model="selectedCategory"
-            class="flex-1 sm:flex-none sm:w-48"
+            class="flex-1 min-w-0 sm:flex-none sm:w-48"
           />
           <PantrySortSelect
             v-model="sortBy"
             :show-next-due="false"
-            class="flex-1 sm:flex-none sm:w-48"
+            class="flex-1 min-w-0 sm:flex-none sm:w-48"
           />
         </div>
       </div>
@@ -337,7 +363,7 @@ async function handleUncheck(item: PantryItem) {
         <div>
           <h3 class="font-bold text-highlighted">Your shopping list is clear!</h3>
           <p class="text-muted mt-1 max-w-sm mx-auto">
-            All pantry items are stocked, or you're ready to plan your next shop. Use the input bar above or select from Cadence Suggestions.
+            All pantry items are stocked, or you're ready to plan your next shop. Use the input bar below or select from Cadence Suggestions.
           </p>
         </div>
         <UButton
@@ -380,6 +406,7 @@ async function handleUncheck(item: PantryItem) {
       <div v-else class="space-y-2">
         <ShoppingListItemCard
           v-for="item in displayedShoppingList"
+          :id="`shopping-item-${item.id}`"
           :key="item.id"
           :item="item"
           @toggle-check="handleCheckOff(item)"
@@ -434,5 +461,131 @@ async function handleUncheck(item: PantryItem) {
         </template>
       </UCollapsible>
     </div>
+
+    <!-- Desktop Add Item Fixed Bottom Bar -->
+    <div class="hidden sm:block fixed bottom-0 left-0 right-0 z-30 bg-default/95 backdrop-blur-md border-t border-default py-3.5 px-4 shadow-lg">
+      <div class="max-w-5xl mx-auto w-full">
+        <UInputMenu
+          v-model="quickInput"
+          mode="autocomplete"
+          :items="autocompleteItems"
+          value-key="value"
+          :content="{ hideWhenEmpty: true }"
+          placeholder="Add an item to the shopping list"
+          :icon="isDesktopInputFocused ? 'i-lucide-circle' : 'i-lucide-plus'"
+          size="lg"
+          class="w-full"
+          @focus="isDesktopInputFocused = true"
+          @blur="isDesktopInputFocused = false"
+          @keydown.enter.prevent="handleSubmitInput"
+        >
+          <template #trailing>
+            <div v-if="quickInput.trim().length > 0" class="flex items-center gap-1.5 mr-1">
+              <!-- Category Dropdown Button -->
+              <UDropdownMenu :items="categoryMenuItems">
+                <UButton
+                  color="neutral"
+                  variant="subtle"
+                  size="xs"
+                  icon="i-lucide-tag"
+                  :label="hasChosenNewCategory ? newCategory : undefined"
+                  title="Category"
+                />
+              </UDropdownMenu>
+
+              <!-- Cadence Dropdown Button -->
+              <UDropdownMenu :items="cadenceMenuItems">
+                <UButton
+                  color="neutral"
+                  variant="subtle"
+                  size="xs"
+                  icon="i-lucide-repeat"
+                  :label="hasChosenNewCadence ? selectedCadenceLabel : undefined"
+                  title="Cadence frequency"
+                />
+              </UDropdownMenu>
+            </div>
+          </template>
+        </UInputMenu>
+      </div>
+    </div>
+
+    <!-- Mobile Floating Action Button (FAB) -->
+    <div class="sm:hidden fixed right-4 bottom-20 z-30">
+      <UButton
+        color="primary"
+        variant="solid"
+        size="xl"
+        icon="i-lucide-plus"
+        class="rounded-full shadow-lg h-14 w-14 flex items-center justify-center p-0"
+        aria-label="Add Shopping Item"
+        @click="openMobileDrawer"
+      />
+    </div>
+
+    <!-- Mobile Add Item Bottom Drawer -->
+    <UDrawer
+      v-model:open="isMobileDrawerOpen"
+      direction="bottom"
+      :ui="{ container: 'p-4 gap-3' }"
+    >
+      <template #body>
+        <div class="space-y-3 p-1">
+          <!-- Input + Solid Up Arrow Button -->
+          <div class="flex items-center gap-2">
+            <UInputMenu
+              ref="mobileInputRef"
+              v-model="quickInput"
+              mode="autocomplete"
+              :items="autocompleteItems"
+              value-key="value"
+              :content="{ hideWhenEmpty: true }"
+              placeholder="Add an item to the shopping list"
+              :icon="isMobileInputFocused ? 'i-lucide-circle' : 'i-lucide-plus'"
+              size="lg"
+              class="flex-1"
+              @focus="isMobileInputFocused = true"
+              @blur="isMobileInputFocused = false"
+              @keydown.enter.prevent="handleSubmitInput"
+            />
+            <UButton
+              color="primary"
+              variant="solid"
+              size="lg"
+              icon="i-lucide-arrow-up"
+              :disabled="!quickInput.trim()"
+              aria-label="Add Item"
+              class="shrink-0"
+              @click="handleSubmitInput"
+            />
+          </div>
+
+          <!-- Category and Frequency Buttons on their own row -->
+          <div class="flex items-center gap-2">
+            <!-- Category Button with initial 'Category' label -->
+            <UDropdownMenu :items="categoryMenuItems">
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-lucide-tag"
+                :label="hasChosenNewCategory ? newCategory : 'Category'"
+              />
+            </UDropdownMenu>
+
+            <!-- Frequency Button with initial 'Frequency' label -->
+            <UDropdownMenu :items="cadenceMenuItems">
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-lucide-repeat"
+                :label="hasChosenNewCadence ? selectedCadenceLabel : 'Frequency'"
+              />
+            </UDropdownMenu>
+          </div>
+        </div>
+      </template>
+    </UDrawer>
   </div>
 </template>

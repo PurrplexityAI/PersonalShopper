@@ -1,19 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import { usePantryStore } from "~~/app/stores/pantry";
+import { CADENCE_OPTIONS } from "~~/app/utils/cadence";
 
 const store = usePantryStore();
-
-const CADENCE_PRESETS = [
-  { days: 1, label: "Daily" },
-  { days: 3, label: "Every 3 days" },
-  { days: 7, label: "Weekly (7d)" },
-  { days: 14, label: "Every 2 weeks (14d)" },
-  { days: 21, label: "Every 3 weeks" },
-  { days: 30, label: "Monthly (30d)" },
-  { days: 60, label: "Every 2 months" },
-  { days: 90, label: "Quarterly (90d)" },
-];
 
 const name = ref("");
 const category = ref("General");
@@ -38,12 +28,13 @@ watch(
       quantity.value = store.editingItem.quantity || 1;
       unit.value = store.editingItem.unit || "items";
       frequencyDays.value = store.editingItem.frequencyDays || 7;
-      const isPreset = CADENCE_PRESETS.some((p) => p.days === store.editingItem?.frequencyDays);
+      const isPreset = CADENCE_OPTIONS.some((p) => p.days === store.editingItem?.frequencyDays);
       isCustomCadence.value = !isPreset;
       customDays.value = String(store.editingItem.frequencyDays || 7);
       notes.value = store.editingItem.notes || "";
     } else {
-      name.value = "";
+      // Default item name to active search input if present
+      name.value = store.searchQuery.trim();
       category.value = store.categories[0] || "General";
       customCategory.value = "";
       inStock.value = true;
@@ -109,10 +100,15 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <UModal
+  <UDrawer
     v-model:open="store.isItemModalOpen"
+    direction="right"
+    :dismissible="false"
     :title="store.editingItem ? 'Edit Pantry Item' : 'Add New Pantry Item'"
-    :description="store.editingItem ? 'Update inventory details and purchase cadence' : 'Inventory items in the pantry must be unique'"
+    :ui="{
+      content: 'w-full max-w-full sm:w-auto sm:max-w-md h-full',
+      container: 'h-full flex flex-col justify-between p-4 sm:p-6 overflow-y-auto'
+    }"
   >
     <template #body>
       <form class="space-y-4" @submit.prevent="handleSubmit">
@@ -169,7 +165,7 @@ async function handleSubmit() {
           </template>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
             <UButton
-              v-for="preset in CADENCE_PRESETS"
+              v-for="preset in CADENCE_OPTIONS"
               :key="preset.days"
               type="button"
               size="md"
@@ -256,14 +252,7 @@ async function handleSubmit() {
 
     <template #footer>
       <div class="flex items-center justify-end space-x-2 w-full">
-        <UButton
-          color="neutral"
-          variant="outline"
-          :disabled="isSubmitting"
-          @click="store.closeItemModal()"
-        >
-          Cancel
-        </UButton>
+        <!-- Buttons swapped: Add to pantry / Save changes is first, Cancel is second -->
         <UButton
           color="primary"
           icon="i-lucide-check"
@@ -272,7 +261,15 @@ async function handleSubmit() {
         >
           <span>{{ isSubmitting ? 'Saving...' : store.editingItem ? 'Save Changes' : 'Add to Pantry' }}</span>
         </UButton>
+        <UButton
+          color="neutral"
+          variant="outline"
+          :disabled="isSubmitting"
+          @click="store.closeItemModal()"
+        >
+          Cancel
+        </UButton>
       </div>
     </template>
-  </UModal>
+  </UDrawer>
 </template>

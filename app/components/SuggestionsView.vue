@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { usePantryStore } from "~~/app/stores/pantry";
+import AppScreenHeader from "./AppScreenHeader.vue";
 
 const store = usePantryStore();
 
@@ -19,7 +20,8 @@ async function handleAddAll() {
 </script>
 
 <template>
-  <div class="space-y-4 pb-20 sm:pb-8">
+  <div class="space-y-4 pb-36 sm:pb-12">
+    <AppScreenHeader title="Suggestions" />
     <!-- Header Banner -->
     <div class="bg-warning/10 border border-warning/30 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div>
