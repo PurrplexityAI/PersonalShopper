@@ -4,8 +4,9 @@ import {
   calculateNextDueDate,
   evaluateItemCadence,
   generateSuggestions,
+  sortSuggestionsSoonestFirst,
 } from "~~/app/utils/cadence";
-import type { PantryItem } from "~~/shared/types";
+import type { PantryItem, ShoppingSuggestion } from "~~/shared/types";
 
 describe("Cadence Calculation Engine", () => {
   it("formats cadence frequency labels correctly", () => {
@@ -132,4 +133,81 @@ describe("Cadence Calculation Engine", () => {
     expect(suggestions[1].item.id).toBe("i1");
     expect(suggestions[1].urgency).toBe("high");
   });
+
+  it("sorts suggestions by due date soonest first", () => {
+    const sug1: ShoppingSuggestion = {
+      item: {
+        id: "s1",
+        name: "Later Item",
+        category: "General",
+        inStock: true,
+        quantity: 1,
+        unit: "item",
+        frequencyDays: 14,
+        frequencyLabel: "Every 2 weeks",
+        lastPurchasedAt: "2026-09-01T12:00:00.000Z",
+        nextDueDate: "2026-09-20T12:00:00.000Z",
+        inShoppingList: false,
+        shoppingListQuantity: 1,
+        createdAt: "2026-09-01T12:00:00.000Z",
+        updatedAt: "2026-09-01T12:00:00.000Z",
+      },
+      reason: "Due later",
+      urgency: "low",
+      daysRemaining: 10,
+    };
+
+    const sug2: ShoppingSuggestion = {
+      item: {
+        id: "s2",
+        name: "Sooner Item",
+        category: "General",
+        inStock: true,
+        quantity: 1,
+        unit: "item",
+        frequencyDays: 7,
+        frequencyLabel: "Weekly (7d)",
+        lastPurchasedAt: "2026-09-01T12:00:00.000Z",
+        nextDueDate: "2026-09-08T12:00:00.000Z",
+        inShoppingList: false,
+        shoppingListQuantity: 1,
+        createdAt: "2026-09-01T12:00:00.000Z",
+        updatedAt: "2026-09-01T12:00:00.000Z",
+      },
+      reason: "Due sooner",
+      urgency: "high",
+      daysRemaining: 0,
+    };
+
+    const sug3: ShoppingSuggestion = {
+      item: {
+        id: "s3",
+        name: "Out of Stock Item (No due date)",
+        category: "General",
+        inStock: false,
+        quantity: 0,
+        unit: "item",
+        frequencyDays: 0,
+        frequencyLabel: "No cadence",
+        lastPurchasedAt: null,
+        nextDueDate: null,
+        inShoppingList: false,
+        shoppingListQuantity: 1,
+        createdAt: "2026-09-01T12:00:00.000Z",
+        updatedAt: "2026-09-01T12:00:00.000Z",
+      },
+      reason: "Out of stock in pantry",
+      urgency: "critical",
+      daysRemaining: -999,
+    };
+
+    const sorted = sortSuggestionsSoonestFirst([sug1, sug2, sug3]);
+    expect(sorted.length).toBe(3);
+    // Out of stock item (-Infinity due date) comes first
+    expect(sorted[0].item.id).toBe("s3");
+    // Sooner item (Sept 8) comes before later item (Sept 20)
+    expect(sorted[1].item.id).toBe("s2");
+    expect(sorted[2].item.id).toBe("s1");
+  });
 });
+

@@ -4,7 +4,6 @@ import { usePantryStore } from "~~/app/stores/pantry";
 import AppNavbar from "~~/app/components/AppNavbar.vue";
 import ShoppingListView from "~~/app/components/ShoppingListView.vue";
 import PantryView from "~~/app/components/PantryView.vue";
-import SuggestionsView from "~~/app/components/SuggestionsView.vue";
 import ItemModal from "~~/app/components/ItemModal.vue";
 
 const store = usePantryStore();
@@ -30,7 +29,6 @@ onMounted(() => {
         <template v-else>
           <ShoppingListView v-if="store.activeTab === 'shopping'" />
           <PantryView v-else-if="store.activeTab === 'pantry'" />
-          <SuggestionsView v-else-if="store.activeTab === 'suggestions'" />
         </template>
       </main>
 

@@ -167,3 +167,20 @@ export function generateSuggestions(items: PantryItem[], now: Date = new Date())
     return a.daysRemaining - b.daysRemaining;
   });
 }
+
+/**
+ * Sorts suggestions by their due date, soonest first.
+ * Items with null nextDueDate (e.g. out of stock items) or earlier due dates come first.
+ */
+export function sortSuggestionsSoonestFirst(suggestions: ShoppingSuggestion[]): ShoppingSuggestion[] {
+  return [...suggestions].sort((a, b) => {
+    const dueA = a.item.nextDueDate ? new Date(a.item.nextDueDate).getTime() : -Infinity;
+    const dueB = b.item.nextDueDate ? new Date(b.item.nextDueDate).getTime() : -Infinity;
+
+    if (dueA !== dueB) {
+      return dueA - dueB;
+    }
+    return a.item.name.localeCompare(b.item.name);
+  });
+}
+

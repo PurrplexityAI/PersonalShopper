@@ -96,4 +96,25 @@ describe("ShoppingListView component", () => {
       expect(wrapper.text()).toContain("Shopping list");
     });
   });
+
+  describe("Suggestions Drawer & Buttons", () => {
+    it("renders lightbulb button in desktop title actions slot with tooltip 'Suggestions'", async () => {
+      const wrapper = await mountSuspended(ShoppingListView);
+      const lightbulbBtn = wrapper.find("button[aria-label='Suggestions']");
+      expect(lightbulbBtn.exists()).toBe(true);
+      expect(lightbulbBtn.attributes("title")).toBe("Suggestions");
+
+      const icon = lightbulbBtn.findComponent({ name: "UIcon" });
+      expect(icon.exists()).toBe(true);
+      expect(icon.props("name")).toBe("i-lucide-lightbulb");
+    });
+
+    it("renders mobile floating Suggestions button", async () => {
+      const wrapper = await mountSuspended(ShoppingListView);
+      const mobileBtn = wrapper.findAll("button").find((b) => b.text().includes("Suggestions"));
+      expect(mobileBtn).toBeDefined();
+      expect(mobileBtn?.classes()).toContain("rounded-full");
+    });
+  });
 });
+

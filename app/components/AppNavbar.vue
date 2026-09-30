@@ -25,12 +25,6 @@ const tabs = computed<TabItem[]>(() => [
     shortLabel: "Pantry",
     icon: "i-lucide-package",
   },
-  {
-    id: "suggestions",
-    label: "Cadence Suggestions",
-    shortLabel: "Suggestions",
-    icon: "i-lucide-sparkles",
-  },
 ]);
 </script>
 
@@ -59,7 +53,7 @@ const tabs = computed<TabItem[]>(() => [
 
     <!-- Mobile Bottom Navigation Bar (Fixed) -->
     <nav aria-label="Mobile Navigation" class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-default/95 backdrop-blur-md border-t border-default safe-bottom transform-gpu">
-      <div class="grid grid-cols-3 h-16">
+      <div class="grid grid-cols-2 h-16">
         <button
           v-for="tab in tabs"
           :key="tab.id"

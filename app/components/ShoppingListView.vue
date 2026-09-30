@@ -1,19 +1,146 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, watch } from "vue";
-import { useFocus } from "@vueuse/core";
+import { ref, computed, nextTick, watch, onMounted } from "vue";
+import { useFocus, useMediaQuery } from "@vueuse/core";
 import { usePantryStore } from "~~/app/stores/pantry";
 import type { PantryItem } from "~~/shared/types";
 import { sortPantryItems, type PantrySortOption } from "~~/app/utils/sort";
-import { CADENCE_OPTIONS } from "~~/app/utils/cadence";
+import { CADENCE_OPTIONS, sortSuggestionsSoonestFirst } from "~~/app/utils/cadence";
 import AppScreenHeader from "./AppScreenHeader.vue";
 import CategorySelect from "./CategorySelect.vue";
 import PantrySortSelect from "./PantrySortSelect.vue";
 import ShoppingListItemCard from "./ShoppingListItemCard.vue";
+import SuggestionListItem from "./SuggestionListItem.vue";
 
 const store = usePantryStore();
+const toast = useToast();
+
+const isDesktop = useMediaQuery("(min-width: 640px)");
+const isDesktopSuggestionsOpen = ref(false);
+const isMobileSuggestionsOpen = ref(false);
+const mobileActiveSnapPoint = ref<number | string | null>(0.6);
+const removingSuggestionIds = ref<Set<string>>(new Set());
 
 const selectedCategory = ref<string | null>(null);
 const sortBy = ref<PantrySortOption>("alpha-asc");
+
+const orderedSuggestions = computed(() => {
+  return sortSuggestionsSoonestFirst(store.suggestions);
+});
+
+const displayedSuggestions = computed(() => {
+  return orderedSuggestions.value.filter(
+    (sug) => !removingSuggestionIds.value.has(sug.item.id)
+  );
+});
+
+const isMobileFullScreen = computed(() => {
+  return (
+    mobileActiveSnapPoint.value === 1 ||
+    mobileActiveSnapPoint.value === "1" ||
+    mobileActiveSnapPoint.value === "100%"
+  );
+});
+
+function handleMobileListScroll(e: Event) {
+  const el = e.target as HTMLElement;
+  if (el.scrollTop > 10 && !isMobileFullScreen.value) {
+    mobileActiveSnapPoint.value = 1;
+  }
+}
+
+function closeMobileSuggestions() {
+  isMobileSuggestionsOpen.value = false;
+  mobileActiveSnapPoint.value = 0.6;
+}
+
+function openMobileSuggestionsDrawer() {
+  mobileActiveSnapPoint.value = 0.6;
+  isMobileSuggestionsOpen.value = true;
+}
+
+async function handleAddSuggestion(item: PantryItem) {
+  // Quickly fade out and animate items below moving up
+  removingSuggestionIds.value.add(item.id);
+
+  // Match manual add behavior: reset category filter if needed
+  if (selectedCategory.value !== null && selectedCategory.value !== item.category) {
+    selectedCategory.value = null;
+  }
+
+  // Add to shopping list
+  const added = await store.addToShoppingList({ nameOrId: item.id, quantity: 1 });
+
+  // Scroll into view behind drawer without closing drawer
+  if (added) {
+    smoothScrollToItem(added.id);
+  } else {
+    smoothScrollToItem(item.id);
+  }
+
+  // On mobile, show toast with Undo
+  if (!isDesktop.value) {
+    toast.add({
+      title: "Item added to shopping list",
+      actions: [
+        {
+          label: "Undo",
+          onClick: async () => {
+            removingSuggestionIds.value.delete(item.id);
+            await store.deleteFromShoppingList(item);
+          },
+        },
+      ],
+    });
+  }
+
+  setTimeout(() => {
+    removingSuggestionIds.value.delete(item.id);
+  }, 1000);
+}
+
+// Session auto-open for mobile on first entry
+const SESSION_SUGGESTIONS_OPENED_KEY = "ps_mobile_suggestions_session_opened";
+let hasAutoOpenedThisSession = false;
+
+function tryAutoOpenMobileSuggestions() {
+  if (typeof window === "undefined") return;
+  if (isDesktop.value) return;
+  if (hasAutoOpenedThisSession) return;
+
+  try {
+    if (sessionStorage.getItem(SESSION_SUGGESTIONS_OPENED_KEY)) {
+      hasAutoOpenedThisSession = true;
+      return;
+    }
+  } catch {
+    // ignore storage errors
+  }
+
+  if (store.suggestions.length > 0) {
+    hasAutoOpenedThisSession = true;
+    try {
+      sessionStorage.setItem(SESSION_SUGGESTIONS_OPENED_KEY, "true");
+    } catch {
+      // ignore storage errors
+    }
+    mobileActiveSnapPoint.value = 0.6;
+    isMobileSuggestionsOpen.value = true;
+  }
+}
+
+onMounted(() => {
+  tryAutoOpenMobileSuggestions();
+});
+
+watch(
+  () => store.suggestions.length,
+  (count) => {
+    if (count > 0) {
+      tryAutoOpenMobileSuggestions();
+    }
+  }
+);
+
 
 const filteredShoppingList = computed(() => {
   return store.shoppingList.filter((item) => {
@@ -30,7 +157,6 @@ const displayedShoppingList = computed(() => {
 
 // Quick Add State
 const quickInput = ref("");
-const showSuggestions = ref(true);
 
 const newCategory = ref("General");
 const hasChosenNewCategory = ref(false);
@@ -240,13 +366,6 @@ function openMobileDrawer() {
   isMobileDrawerOpen.value = true;
 }
 
-async function handleAddAllSuggestions() {
-  const ids = store.suggestions.map((s) => s.item.id);
-  if (ids.length > 0) {
-    await store.addBulkToShoppingList(ids);
-  }
-}
-
 const isPurchasedOpen = ref(true);
 
 const purchasedItems = computed<PantryItem[]>(() => {
@@ -301,6 +420,15 @@ async function handleUncheck(item: PantryItem) {
               :show-next-due="false"
               class="w-48"
             />
+            <UButton
+              :color="isDesktopSuggestionsOpen ? 'primary' : 'neutral'"
+              :variant="isDesktopSuggestionsOpen ? 'subtle' : 'outline'"
+              icon="i-lucide-lightbulb"
+              size="md"
+              aria-label="Suggestions"
+              title="Suggestions"
+              @click="isDesktopSuggestionsOpen = !isDesktopSuggestionsOpen"
+            />
           </div>
         </template>
       </AppScreenHeader>
@@ -318,105 +446,6 @@ async function handleUncheck(item: PantryItem) {
         />
       </div>
     </div>
-      <!-- Cadence Suggestions Section -->
-    <div
-      v-if="store.suggestions.length > 0"
-      class="bg-warning/10 border border-warning/30 rounded-2xl p-4 shadow-xs transition-all"
-    >
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 rounded-xl bg-warning text-inverted flex items-center justify-center shadow-xs">
-            <UIcon name="i-lucide-sparkles" class="w-4 h-4" />
-          </div>
-          <div>
-            <h3 class="font-bold text-highlighted flex items-center space-x-2">
-              <span>Smart Cadence Suggestions</span>
-              <UBadge
-                color="warning"
-                variant="subtle"
-                size="md"
-              >
-                {{ store.suggestions.length }} due
-              </UBadge>
-            </h3>
-            <p class="text-muted">
-              Items due for replenishment based on your purchase frequency
-            </p>
-          </div>
-        </div>
-
-        <div class="flex items-center space-x-2">
-          <UButton
-            color="warning"
-            variant="solid"
-            size="md"
-            class="hidden sm:inline-flex"
-            @click="handleAddAllSuggestions"
-          >
-            <span>Add All ({{ store.suggestions.length }})</span>
-            <UIcon name="i-lucide-arrow-right" class="w-3.5 h-3.5" />
-          </UButton>
-          <UButton
-            color="warning"
-            variant="ghost"
-            size="md"
-            :icon="showSuggestions ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-            :title="showSuggestions ? 'Collapse' : 'Expand'"
-            :aria-label="showSuggestions ? 'Collapse suggestions' : 'Expand suggestions'"
-            @click="showSuggestions = !showSuggestions"
-          />
-        </div>
-      </div>
-
-      <!-- Suggestions Carousel -->
-      <div v-if="showSuggestions" class="mt-3 pt-3 border-t border-warning/30 space-y-2">
-        <div class="sm:hidden mb-2">
-          <UButton
-            color="warning"
-            variant="solid"
-            block
-            size="md"
-            @click="handleAddAllSuggestions"
-          >
-            <span>Add All ({{ store.suggestions.length }}) Due Items</span>
-            <UIcon name="i-lucide-arrow-right" class="w-3.5 h-3.5" />
-          </UButton>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          <div
-            v-for="sug in store.suggestions"
-            :key="sug.item.id"
-            class="bg-default/90 border border-default rounded-xl p-3 flex items-center justify-between shadow-2xs"
-          >
-            <div class="min-w-0 pr-2">
-              <div class="font-semibold text-highlighted truncate">
-                {{ sug.item.name }}
-              </div>
-              <div class="flex items-center space-x-1.5 text-muted font-medium mt-1">
-                <UBadge
-                  :color="sug.urgency === 'critical' ? 'error' : 'warning'"
-                  variant="subtle"
-                  size="md"
-                >
-                  {{ sug.reason }}
-                </UBadge>
-                <span class="text-dimmed">• {{ sug.item.frequencyLabel }}</span>
-              </div>
-            </div>
-
-            <UButton
-              color="primary"
-              variant="subtle"
-              size="md"
-              icon="i-lucide-plus"
-              label="Add"
-              @click="store.addToShoppingList({ nameOrId: sug.item.id, quantity: 1 })"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Active Shopping List Items -->
     <div class="space-y-3">
@@ -431,7 +460,7 @@ async function handleUncheck(item: PantryItem) {
         <div>
           <h3 class="font-bold text-highlighted">Your shopping list is clear!</h3>
           <p class="text-muted mt-1 max-w-sm mx-auto">
-            All pantry items are stocked, or you're ready to plan your next shop. Use the input bar below or select from Cadence Suggestions.
+            All pantry items are stocked, or you're ready to plan your next shop. Use the input bar below or select from Suggestions.
           </p>
         </div>
         <UButton
@@ -439,10 +468,10 @@ async function handleUncheck(item: PantryItem) {
           color="warning"
           variant="solid"
           size="md"
-          icon="i-lucide-sparkles"
-          @click="handleAddAllSuggestions"
+          icon="i-lucide-lightbulb"
+          @click="isDesktop ? (isDesktopSuggestionsOpen = true) : openMobileSuggestionsDrawer()"
         >
-          Add {{ store.suggestions.length }} Cadence Due Items
+          View {{ store.suggestions.length }} Suggestions
         </UButton>
       </div>
 
@@ -594,14 +623,34 @@ async function handleUncheck(item: PantryItem) {
       </div>
     </div>
 
+    <!-- Mobile Floating "Suggestions" Button -->
+    <div
+      v-if="!isMobileSuggestionsOpen && !isMobileDrawerOpen"
+      class="sm:hidden fixed left-1/2 -translate-x-1/2 bottom-20 h-14 flex items-center z-30 pointer-events-none"
+    >
+      <UButton
+        color="neutral"
+        variant="solid"
+        size="lg"
+        icon="i-lucide-lightbulb"
+        label="Suggestions"
+        class="rounded-full shadow-lg pointer-events-auto px-5 py-2.5 font-semibold text-sm cursor-pointer"
+        aria-label="Suggestions"
+        @click="openMobileSuggestionsDrawer"
+      />
+    </div>
+
     <!-- Mobile Floating Action Button (FAB) -->
-    <div class="sm:hidden fixed right-4 bottom-20 z-30">
+    <div
+      v-if="!isMobileSuggestionsOpen && !isMobileDrawerOpen"
+      class="sm:hidden fixed right-4 bottom-20 z-30"
+    >
       <UButton
         color="primary"
         variant="solid"
         size="xl"
         icon="i-lucide-plus"
-        class="rounded-full shadow-lg h-14 w-14 flex items-center justify-center p-0"
+        class="rounded-full shadow-lg h-14 w-14 flex items-center justify-center p-0 cursor-pointer"
         aria-label="Add Shopping Item"
         @click="openMobileDrawer"
       />
@@ -679,5 +728,143 @@ async function handleUncheck(item: PantryItem) {
         </div>
       </template>
     </UDrawer>
+
+    <!-- Desktop Suggestions Drawer (Right, Non-modal, Close button, No handle) -->
+    <UDrawer
+      v-if="isDesktop"
+      v-model:open="isDesktopSuggestionsOpen"
+      direction="right"
+      :modal="false"
+      :overlay="false"
+      :dismissible="false"
+      :handle="false"
+      :close="true"
+      title="Suggestions"
+      :ui="{
+        content: 'w-80 sm:w-96 max-w-full h-full shadow-xl border-s border-default flex flex-col bg-default',
+        container: 'flex flex-col h-full overflow-hidden p-0',
+        header: 'px-4 py-3 border-b border-default shrink-0 flex items-center justify-between bg-default',
+        title: 'text-lg font-bold text-highlighted',
+        body: 'flex-1 overflow-y-auto p-0'
+      }"
+    >
+      <template #body>
+        <div class="h-full overflow-y-auto divide-y divide-default">
+          <div v-if="displayedSuggestions.length === 0" class="py-12 px-4 text-center space-y-3">
+            <div class="w-12 h-12 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center">
+              <UIcon name="i-lucide-check" class="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <h4 class="font-bold text-highlighted text-base">All caught up!</h4>
+            <p class="text-sm text-muted max-w-xs mx-auto">
+              No items are currently due for replenishment.
+            </p>
+          </div>
+
+          <TransitionGroup
+            v-else
+            name="suggestion-anim"
+            tag="div"
+            class="relative"
+          >
+            <SuggestionListItem
+              v-for="sug in displayedSuggestions"
+              :key="sug.item.id"
+              :suggestion="sug"
+              @add="handleAddSuggestion"
+            />
+          </TransitionGroup>
+        </div>
+      </template>
+    </UDrawer>
+
+    <!-- Mobile Suggestions Drawer (Bottom, Modal, Handle, Scroll to full screen, Title in view) -->
+    <UDrawer
+      v-else
+      v-model:open="isMobileSuggestionsOpen"
+      v-model:active-snap-point="mobileActiveSnapPoint"
+      direction="bottom"
+      :snap-points="[0.6, 1]"
+      :handle="true"
+      :modal="true"
+      title="Suggestions"
+      :ui="{
+        content: 'flex flex-col h-full bg-default',
+        container: 'flex flex-col h-full overflow-hidden p-0',
+        header: 'px-4 py-3 border-b border-default shrink-0 flex items-center justify-between bg-default',
+        title: 'text-lg font-bold text-highlighted',
+        body: 'flex-1 overflow-y-auto p-0'
+      }"
+      @update:open="(val) => { if (!val) mobileActiveSnapPoint = 0.6; }"
+    >
+      <template #title>
+        <span class="text-lg font-bold text-highlighted">Suggestions</span>
+      </template>
+
+      <template #actions>
+        <UButton
+          v-if="isMobileFullScreen"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-x"
+          size="md"
+          aria-label="Close"
+          @click="closeMobileSuggestions"
+        />
+      </template>
+
+      <template #body>
+        <div class="h-full overflow-y-auto divide-y divide-default pb-8" @scroll="handleMobileListScroll">
+          <div v-if="displayedSuggestions.length === 0" class="py-12 px-4 text-center space-y-3">
+            <div class="w-12 h-12 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center">
+              <UIcon name="i-lucide-check" class="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <h4 class="font-bold text-highlighted text-base">All caught up!</h4>
+            <p class="text-sm text-muted max-w-xs mx-auto">
+              No items are currently due for replenishment.
+            </p>
+          </div>
+
+          <TransitionGroup
+            v-else
+            name="suggestion-anim"
+            tag="div"
+            class="relative"
+          >
+            <SuggestionListItem
+              v-for="sug in displayedSuggestions"
+              :key="sug.item.id"
+              :suggestion="sug"
+              @add="handleAddSuggestion"
+            />
+          </TransitionGroup>
+        </div>
+      </template>
+    </UDrawer>
   </div>
 </template>
+
+<style scoped>
+.suggestion-anim-move {
+  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.suggestion-anim-leave-active {
+  position: absolute;
+  width: 100%;
+  pointer-events: none;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.suggestion-anim-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.suggestion-anim-enter-active {
+  transition: none;
+}
+
+.suggestion-anim-enter-from {
+  opacity: 1;
+}
+</style>

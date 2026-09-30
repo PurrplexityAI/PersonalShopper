@@ -25,7 +25,7 @@ export interface ShoppingSuggestion {
   daysRemaining: number; // Negative if overdue, 0 if due today, positive if due soon
 }
 
-export type ActiveTab = "shopping" | "pantry" | "suggestions";
+export type ActiveTab = "shopping" | "pantry";
 
 export type StockFilter = "all" | "in-stock" | "out-of-stock" | "due";
 
