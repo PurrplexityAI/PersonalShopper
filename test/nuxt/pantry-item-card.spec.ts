@@ -14,7 +14,10 @@ describe("PantryItemCard component", () => {
     unit: "cartons",
     frequencyDays: 7,
     frequencyLabel: "Weekly (7d)",
+    autoFrequency: true,
+    lastSuggestedAt: null,
     lastPurchasedAt: "2026-09-20T12:00:00.000Z",
+    lastPurchasedAtPrevious: null,
     nextDueDate: "2026-10-15T12:00:00.000Z", // In future -> In stock
     inShoppingList: false,
     shoppingListQuantity: 1,
@@ -197,8 +200,17 @@ describe("PantryItemCard component", () => {
       const bodyText = wrapper.find(".space-y-2").text();
       expect(bodyText).toContain("Due");
       expect(bodyText).toContain("Bought");
-      expect(bodyText).toContain("Repeats weekly (7d)");
+      expect(bodyText).toContain("Needed weekly (7d)");
       expect(bodyText).toContain("Keep refrigerated once opened");
+    });
+
+    it("displays 'Repeats' rather than 'Needed' when autoFrequency is false", async () => {
+      const wrapper = await mountSuspended(PantryItemCard, {
+        props: { item: { ...baseItem, autoFrequency: false } },
+      });
+
+      const bodyText = wrapper.find(".space-y-2").text();
+      expect(bodyText).toContain("Repeats weekly (7d)");
     });
 
     it("omits the note row when notes is empty or undefined", async () => {

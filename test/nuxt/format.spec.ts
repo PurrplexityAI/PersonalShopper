@@ -110,5 +110,12 @@ describe("Format Utilities", () => {
       expect(formatFrequencyLabel({ frequencyDays: 1, frequencyLabel: "Daily" })).toBe("Repeats daily");
       expect(formatFrequencyLabel({ frequencyDays: 5 })).toBe("Repeats every 5 days");
     });
+
+    it("uses 'Needed' rather than 'Repeats' when autoFrequency is true", () => {
+      expect(formatFrequencyLabel({ frequencyDays: 7, frequencyLabel: "Weekly (7d)", autoFrequency: true })).toBe("Needed weekly (7d)");
+      expect(formatFrequencyLabel({ frequencyDays: 14, frequencyLabel: "Every 2 weeks (14d)", autoFrequency: true })).toBe("Needed every 2 weeks (14d)");
+      expect(formatFrequencyLabel({ frequencyDays: 5, autoFrequency: true })).toBe("Needed every 5 days");
+      expect(formatFrequencyLabel({ frequencyDays: 7, frequencyLabel: "Weekly (7d)", autoFrequency: false })).toBe("Repeats weekly (7d)");
+    });
   });
 });

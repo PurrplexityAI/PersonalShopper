@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mountSuspended } from "@nuxt/test-utils/runtime";
+import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { nextTick } from "vue";
 import ShoppingListView from "~~/app/components/ShoppingListView.vue";
 import { usePantryStore } from "~~/app/stores/pantry";
@@ -16,7 +16,10 @@ describe("ShoppingListView component", () => {
     unit: "jar",
     frequencyDays: 14,
     frequencyLabel: "Every 2 weeks",
+    autoFrequency: true,
+    lastSuggestedAt: null,
     lastPurchasedAt: "2026-09-01T12:00:00.000Z",
+    lastPurchasedAtPrevious: null,
     nextDueDate: "2026-09-15T12:00:00.000Z",
     inShoppingList: true,
     shoppingListQuantity: 1,
@@ -120,7 +123,8 @@ describe("ShoppingListView component", () => {
       expect(fabBtn.classes()).toContain("rounded-full");
     });
 
-    it("auto-opens desktop suggestions drawer on first session entry when suggestions exist", async () => {
+    it("auto-opens desktop suggestions drawer on first session entry when suggestions exist and labels it 'Do you need?'", async () => {
+      registerEndpoint("/api/shopping-list/suggestions/mark-suggested", () => ({ success: true, count: 1 }));
       const store = usePantryStore();
       store.hasCheckedSuggestionsSession = false;
       store.items = [
@@ -133,7 +137,10 @@ describe("ShoppingListView component", () => {
           unit: "bottle",
           frequencyDays: 7,
           frequencyLabel: "Weekly (7d)",
+          autoFrequency: true,
+          lastSuggestedAt: null,
           lastPurchasedAt: null,
+          lastPurchasedAtPrevious: null,
           nextDueDate: null,
           inShoppingList: false,
           shoppingListQuantity: 1,
@@ -148,7 +155,33 @@ describe("ShoppingListView component", () => {
         const wrapper = await mountSuspended(ShoppingListView);
         expect(store.hasCheckedSuggestionsSession).toBe(true);
         const drawers = wrapper.findAllComponents({ name: "UDrawer" });
-        expect(drawers.length).toBeGreaterThan(0);
+        const sugDrawer = drawers.find((d) => d.props("title") === "Do you need?");
+        expect(sugDrawer).toBeDefined();
+        expect(sugDrawer?.props("title")).toBe("Do you need?");
+      } finally {
+        window.innerWidth = originalWidth;
+      }
+    });
+
+    it("closes desktop suggestions drawer when pantry item editor modal is triggered", async () => {
+      const store = usePantryStore();
+      const originalWidth = window.innerWidth;
+      window.innerWidth = 1024;
+      try {
+        const wrapper = await mountSuspended(ShoppingListView);
+        const lightbulbBtn = wrapper.find("button[aria-label='Suggestions']");
+        // Open drawer
+        await lightbulbBtn.trigger("click");
+        const drawersBefore = wrapper.findAllComponents({ name: "UDrawer" });
+        const desktopDrawer = drawersBefore.find((d) => d.props("title") === "Do you need?");
+        expect(desktopDrawer?.props("open")).toBe(true);
+
+        // User opens item editor
+        store.isItemModalOpen = true;
+        await nextTick();
+
+        // Suggestions drawer should be closed
+        expect(desktopDrawer?.props("open")).toBe(false);
       } finally {
         window.innerWidth = originalWidth;
       }

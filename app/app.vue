@@ -5,6 +5,7 @@ import AppNavbar from "~~/app/components/AppNavbar.vue";
 import ShoppingListView from "~~/app/components/ShoppingListView.vue";
 import PantryView from "~~/app/components/PantryView.vue";
 import ItemModal from "~~/app/components/ItemModal.vue";
+import AnomalyModal from "~~/app/components/AnomalyModal.vue";
 
 const store = usePantryStore();
 
@@ -34,6 +35,17 @@ onMounted(() => {
 
       <!-- Add / Edit Item Drawer (Desktop Right Drawer / Mobile Full Screen) -->
       <ItemModal />
+
+      <!-- Smart Frequency Tracking Anomaly Modal for Pantry tab -->
+      <AnomalyModal
+        v-if="store.activeTab === 'pantry'"
+        v-model:open="store.isAnomalyOpen"
+        :item="store.anomalyItem"
+        :anomaly-type="store.anomalyType"
+        :expected-days="store.anomalyExpectedDays"
+        :lasted-days="store.anomalyLastedDays"
+        @select="store.confirmAnomaly"
+      />
     </div>
   </UApp>
 </template>

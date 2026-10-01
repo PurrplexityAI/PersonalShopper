@@ -14,6 +14,7 @@ const unit = ref("items");
 const frequencyDays = ref(7);
 const isCustomCadence = ref(false);
 const customDays = ref("7");
+const autoFrequency = ref(true);
 const notes = ref("");
 const error = ref<string | null>(null);
 const isSubmitting = ref(false);
@@ -31,6 +32,7 @@ watch(
       const isPreset = CADENCE_OPTIONS.some((p) => p.days === store.editingItem?.frequencyDays);
       isCustomCadence.value = !isPreset;
       customDays.value = String(store.editingItem.frequencyDays || 7);
+      autoFrequency.value = store.editingItem.autoFrequency !== false;
       notes.value = store.editingItem.notes || "";
     } else {
       // Default item name to active search input if present
@@ -43,6 +45,7 @@ watch(
       frequencyDays.value = 7;
       isCustomCadence.value = false;
       customDays.value = "7";
+      autoFrequency.value = true;
       notes.value = "";
     }
     error.value = null;
@@ -89,6 +92,7 @@ async function handleSubmit() {
       quantity: Math.max(0, quantity.value),
       unit: unit.value.trim() || "items",
       frequencyDays: finalCadence,
+      autoFrequency: autoFrequency.value,
       notes: notes.value.trim(),
     });
   } catch (err) {
@@ -157,12 +161,12 @@ async function handleSubmit() {
           />
         </UFormField>
 
-        <!-- Purchase Cadence -->
-        <UFormField label="Purchase Cadence (How often to buy)">
+        <!-- How often do you need buy this item? -->
+        <UFormField label="How often do you need buy this item?">
           <template #label>
             <span class="flex items-center space-x-1">
               <UIcon name="i-lucide-calendar" class="w-3.5 h-3.5 text-muted" />
-              <span>Purchase Cadence (How often to buy)</span>
+              <span>How often do you need buy this item?</span>
             </span>
           </template>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
@@ -203,9 +207,18 @@ async function handleSubmit() {
           </div>
         </UFormField>
 
-        <!-- Stock Status & Quantity -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-          <!-- In Stock Toggle -->
+        <!-- Smart frequency tracking -->
+        <div class="bg-muted p-3 rounded-xl border border-default flex items-center justify-between">
+          <USwitch
+            v-model="autoFrequency"
+            label="Smart frequency tracking"
+            description="Automatically learn how often you need this item based on your buying habits."
+            color="primary"
+          />
+        </div>
+
+        <!-- Stock Status -->
+        <div class="pt-1">
           <div class="bg-muted p-3 rounded-xl border border-default flex items-center justify-between">
             <USwitch
               v-model="inStock"
@@ -213,25 +226,6 @@ async function handleSubmit() {
               description="Currently in pantry"
               color="primary"
             />
-          </div>
-
-          <!-- Quantity and Unit -->
-          <div class="flex space-x-2">
-            <UFormField label="Quantity" class="w-1/2">
-              <UInput
-                v-model.number="quantity"
-                type="number"
-                min="0"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField label="Unit" class="w-1/2">
-              <UInput
-                v-model="unit"
-                placeholder="pack, bottle, kg"
-                class="w-full"
-              />
-            </UFormField>
           </div>
         </div>
 

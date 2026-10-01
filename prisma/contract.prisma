@@ -7,9 +7,12 @@ model PantryItem {
   inStock              Boolean            @default(true)
   quantity             Int                @default(1)
   unit                 String             @default("items")
-  frequencyDays        Int                @default(7)
+  frequencyDays        Float              @default(7)
   frequencyLabel       String             @default("Weekly (7d)")
+  autoFrequency        Boolean            @default(true)
+  lastSuggestedAt      TimestamptzString?
   lastPurchasedAt      TimestamptzString?
+  lastPurchasedAtPrevious TimestamptzString?
   nextDueDate          TimestamptzString?
   inShoppingList       Boolean            @default(false)
   shoppingListQuantity Int                @default(1)

@@ -1,0 +1,174 @@
+[
+  {
+    "id": "column.public.pantry_items.autoFrequency",
+    "label": "Add column \"autoFrequency\" to \"pantry_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "autoFrequency",
+        "table": "pantry_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"autoFrequency\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "pantry_items",
+          "autoFrequency"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"autoFrequency\"",
+        "sql": "ALTER TABLE \"public\".\"pantry_items\" ADD COLUMN \"autoFrequency\" bool DEFAULT true NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"autoFrequency\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "pantry_items",
+          "autoFrequency"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.pantry_items.lastPurchasedAtPrevious",
+    "label": "Add column \"lastPurchasedAtPrevious\" to \"pantry_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "lastPurchasedAtPrevious",
+        "table": "pantry_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"lastPurchasedAtPrevious\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "pantry_items",
+          "lastPurchasedAtPrevious"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"lastPurchasedAtPrevious\"",
+        "sql": "ALTER TABLE \"public\".\"pantry_items\" ADD COLUMN \"lastPurchasedAtPrevious\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"lastPurchasedAtPrevious\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "pantry_items",
+          "lastPurchasedAtPrevious"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.pantry_items.lastSuggestedAt",
+    "label": "Add column \"lastSuggestedAt\" to \"pantry_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "lastSuggestedAt",
+        "table": "pantry_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"lastSuggestedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "pantry_items",
+          "lastSuggestedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"lastSuggestedAt\"",
+        "sql": "ALTER TABLE \"public\".\"pantry_items\" ADD COLUMN \"lastSuggestedAt\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"lastSuggestedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "pantry_items",
+          "lastSuggestedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterType.pantry_items.frequencyDays",
+    "label": "Alter type of \"pantry_items\".\"frequencyDays\" to float8",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "frequencyDays",
+        "table": "pantry_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"frequencyDays\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "pantry_items",
+          "frequencyDays"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "alter type of \"frequencyDays\"",
+        "sql": "ALTER TABLE \"public\".\"pantry_items\" ALTER COLUMN \"frequencyDays\" TYPE float8 USING \"frequencyDays\"::float8"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"frequencyDays\" has type \"double precision\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "pantry_items",
+          "frequencyDays",
+          "double precision"
+        ]
+      }
+    ],
+    "meta": {
+      "warning": "TABLE_REWRITE"
+    }
+  }
+]

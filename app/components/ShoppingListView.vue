@@ -10,6 +10,8 @@ import CategorySelect from "./CategorySelect.vue";
 import PantrySortSelect from "./PantrySortSelect.vue";
 import ShoppingListItemCard from "./ShoppingListItemCard.vue";
 import SuggestionListItem from "./SuggestionListItem.vue";
+import AnomalyModal from "./AnomalyModal.vue";
+import { calculateBurnRatio } from "~~/app/utils/frequency";
 
 const store = usePantryStore();
 const toast = useToast();
@@ -19,6 +21,15 @@ const isDesktopSuggestionsOpen = ref(false);
 const isMobileSuggestionsOpen = ref(false);
 const isMobileFullScreen = ref(false);
 const removingSuggestionIds = ref<Set<string>>(new Set());
+
+// Anomaly modal state
+const isAnomalyOpen = ref(false);
+const anomalyItem = ref<PantryItem | null>(null);
+const anomalyType = ref<"high" | "low" | null>(null);
+const anomalyInitialAction = ref<"need" | "still_have">("need");
+const anomalyExpectedDays = ref(7);
+const anomalyLastedDays = ref(7);
+const anomalyAdjustedDays = ref(7);
 
 const selectedCategory = ref<string | null>(null);
 const sortBy = ref<PantrySortOption>("alpha-asc");
@@ -32,6 +43,34 @@ const displayedSuggestions = computed(() => {
     (sug) => !removingSuggestionIds.value.has(sug.item.id)
   );
 });
+
+const isSuggestionsDrawerOpen = computed(() => {
+  return isDesktop.value ? isDesktopSuggestionsOpen.value : isMobileSuggestionsOpen.value;
+});
+
+function checkAndMarkCandidateSuggestions() {
+  if (!isSuggestionsDrawerOpen.value) return;
+  const toMark: string[] = [];
+  for (const sug of displayedSuggestions.value) {
+    const it = sug.item;
+    if (!it.lastSuggestedAt) {
+      toMark.push(it.id);
+    } else if (it.lastPurchasedAt && new Date(it.lastSuggestedAt).getTime() < new Date(it.lastPurchasedAt).getTime()) {
+      toMark.push(it.id);
+    }
+  }
+  if (toMark.length > 0) {
+    store.markSuggestedItems(toMark);
+  }
+}
+
+watch(
+  [isSuggestionsDrawerOpen, () => displayedSuggestions.value.map((s) => s.item.id).join(",")],
+  () => {
+    checkAndMarkCandidateSuggestions();
+  },
+  { immediate: true }
+);
 
 function handleMobileListScroll(e: Event) {
   const el = e.target as HTMLElement;
@@ -50,26 +89,7 @@ function openMobileSuggestionsDrawer() {
   isMobileSuggestionsOpen.value = true;
 }
 
-async function handleAddSuggestion(item: PantryItem) {
-  // Quickly fade out and animate items below moving up
-  removingSuggestionIds.value.add(item.id);
-
-  // Match manual add behavior: reset category filter if needed
-  if (selectedCategory.value !== null && selectedCategory.value !== item.category) {
-    selectedCategory.value = null;
-  }
-
-  // Add to shopping list
-  const added = await store.addToShoppingList({ nameOrId: item.id, quantity: 1 });
-
-  // Scroll into view behind drawer without closing drawer
-  if (added) {
-    smoothScrollToItem(added.id);
-  } else {
-    smoothScrollToItem(item.id);
-  }
-
-  // On mobile, show single toast with Undo (clear stacking toasts)
+function showSuggestionToast(item: PantryItem) {
   if (!isDesktop.value) {
     toast.clear();
     toast.add({
@@ -86,11 +106,181 @@ async function handleAddSuggestion(item: PantryItem) {
       ],
     });
   }
+}
+
+async function handleNeedIt(item: PantryItem) {
+  if (item.autoFrequency === false || !item.lastPurchasedAt) {
+    removingSuggestionIds.value.add(item.id);
+    if (selectedCategory.value !== null && selectedCategory.value !== item.category) {
+      selectedCategory.value = null;
+    }
+    await store.updateItemDirect(item.id, {
+      inShoppingList: true,
+      lastSuggestedAt: null,
+    });
+    smoothScrollToItem(item.id);
+    showSuggestionToast(item);
+    setTimeout(() => {
+      removingSuggestionIds.value.delete(item.id);
+    }, 1000);
+    return;
+  }
+
+  const result = calculateBurnRatio(item, new Date());
+  if (result.classification === "normal") {
+    removingSuggestionIds.value.add(item.id);
+    if (selectedCategory.value !== null && selectedCategory.value !== item.category) {
+      selectedCategory.value = null;
+    }
+    await store.updateItemDirect(item.id, {
+      inShoppingList: true,
+      frequencyDays: result.adjustedFrequencyDays,
+      lastSuggestedAt: null,
+    });
+    smoothScrollToItem(item.id);
+    showSuggestionToast(item);
+    setTimeout(() => {
+      removingSuggestionIds.value.delete(item.id);
+    }, 1000);
+  } else {
+    anomalyItem.value = item;
+    anomalyType.value = result.classification === "high_anomaly" ? "high" : "low";
+    anomalyInitialAction.value = "need";
+    anomalyExpectedDays.value = Math.round(item.frequencyDays);
+    anomalyLastedDays.value = Math.round(result.elapsedDays);
+    anomalyAdjustedDays.value = result.adjustedFrequencyDays;
+    isAnomalyOpen.value = true;
+  }
+}
+
+async function handleStillHave(item: PantryItem) {
+  const nowIso = new Date().toISOString();
+  if (item.autoFrequency === false || !item.lastPurchasedAt) {
+    removingSuggestionIds.value.add(item.id);
+    await store.updateItemDirect(item.id, {
+      inStock: true,
+      lastPurchasedAtPrevious: item.lastPurchasedAt,
+      lastPurchasedAt: nowIso,
+      lastSuggestedAt: null,
+    });
+    setTimeout(() => {
+      removingSuggestionIds.value.delete(item.id);
+    }, 1000);
+    return;
+  }
+
+  const result = calculateBurnRatio(item, new Date());
+  if (result.classification === "normal") {
+    removingSuggestionIds.value.add(item.id);
+    await store.updateItemDirect(item.id, {
+      inStock: true,
+      lastPurchasedAtPrevious: item.lastPurchasedAt,
+      lastPurchasedAt: nowIso,
+      lastSuggestedAt: null,
+    });
+    setTimeout(() => {
+      removingSuggestionIds.value.delete(item.id);
+    }, 1000);
+  } else {
+    anomalyItem.value = item;
+    anomalyType.value = result.classification === "high_anomaly" ? "high" : "low";
+    anomalyInitialAction.value = "still_have";
+    anomalyExpectedDays.value = Math.round(item.frequencyDays);
+    anomalyLastedDays.value = Math.round(result.elapsedDays);
+    anomalyAdjustedDays.value = result.adjustedFrequencyDays;
+    isAnomalyOpen.value = true;
+  }
+}
+
+async function handleAnomalySelect(option: 1 | 2) {
+  const item = anomalyItem.value;
+  if (!item) return;
+
+  const initialAction = anomalyInitialAction.value;
+  const aType = anomalyType.value;
+  const nowIso = new Date().toISOString();
+
+  removingSuggestionIds.value.add(item.id);
+  if (initialAction === "need" && selectedCategory.value !== null && selectedCategory.value !== item.category) {
+    selectedCategory.value = null;
+  }
+
+  if (aType === "high") {
+    if (option === 1) {
+      if (initialAction === "need") {
+        await store.updateItemDirect(item.id, {
+          inShoppingList: true,
+          frequencyDays: anomalyAdjustedDays.value,
+          lastSuggestedAt: null,
+        });
+      } else {
+        await store.updateItemDirect(item.id, {
+          inStock: true,
+          lastPurchasedAtPrevious: item.lastPurchasedAt,
+          lastPurchasedAt: nowIso,
+          frequencyDays: anomalyAdjustedDays.value,
+          lastSuggestedAt: null,
+        });
+      }
+    } else {
+      if (initialAction === "need") {
+        await store.updateItemDirect(item.id, {
+          inShoppingList: true,
+          lastSuggestedAt: null,
+        });
+      } else {
+        await store.updateItemDirect(item.id, {
+          inStock: true,
+          lastPurchasedAtPrevious: item.lastPurchasedAt,
+          lastPurchasedAt: nowIso,
+          lastSuggestedAt: null,
+        });
+      }
+    }
+  } else if (aType === "low") {
+    if (option === 1) {
+      if (initialAction === "need") {
+        await store.updateItemDirect(item.id, {
+          inShoppingList: true,
+          frequencyDays: anomalyAdjustedDays.value,
+          lastSuggestedAt: null,
+        });
+      } else {
+        await store.updateItemDirect(item.id, {
+          inStock: true,
+          lastPurchasedAtPrevious: item.lastPurchasedAt,
+          lastPurchasedAt: nowIso,
+          frequencyDays: anomalyAdjustedDays.value,
+          lastSuggestedAt: null,
+        });
+      }
+    } else {
+      if (initialAction === "need") {
+        await store.updateItemDirect(item.id, {
+          inShoppingList: true,
+          lastSuggestedAt: null,
+        });
+      } else {
+        await store.updateItemDirect(item.id, {
+          inStock: true,
+          lastPurchasedAtPrevious: item.lastPurchasedAt,
+          lastPurchasedAt: nowIso,
+          lastSuggestedAt: null,
+        });
+      }
+    }
+  }
+
+  if (initialAction === "need") {
+    smoothScrollToItem(item.id);
+    // Don't show toast when smart frequency tracking is triggered
+  }
 
   setTimeout(() => {
     removingSuggestionIds.value.delete(item.id);
   }, 1000);
 }
+
 
 // On mobile, when suggestions list is empty, close the drawer
 watch(
@@ -352,7 +542,12 @@ const purchasedItems = computed<PantryItem[]>(() => {
   return store.sessionPurchased
     .map((s) => {
       const found = store.items.find((item) => item.id === s.id);
-      if (found) return found;
+      if (found) {
+        return {
+          ...found,
+          lastPurchasedAtPrevious: found.lastPurchasedAtPrevious ?? s.previousLastPurchasedAt ?? null,
+        };
+      }
       return {
         id: s.id,
         name: s.name,
@@ -363,6 +558,7 @@ const purchasedItems = computed<PantryItem[]>(() => {
         frequencyDays: 7,
         frequencyLabel: "Weekly (7d)",
         lastPurchasedAt: new Date().toISOString(),
+        lastPurchasedAtPrevious: s.previousLastPurchasedAt ?? null,
         nextDueDate: null,
         inShoppingList: false,
         shoppingListQuantity: 1,
@@ -382,6 +578,16 @@ async function handleCheckOff(item: PantryItem) {
 async function handleUncheck(item: PantryItem) {
   await store.uncheckShoppingItem(item);
 }
+
+// On desktop, close suggestions drawer when pantry item editor modal opens
+watch(
+  () => store.isItemModalOpen,
+  (isOpen) => {
+    if (isOpen && isDesktopSuggestionsOpen.value) {
+      isDesktopSuggestionsOpen.value = false;
+    }
+  }
+);
 </script>
 
 <template>
@@ -717,7 +923,7 @@ async function handleUncheck(item: PantryItem) {
       :dismissible="false"
       :handle="false"
       :close="true"
-      title="Suggestions"
+      title="Do you need?"
       :ui="{
         content: 'w-80 sm:w-96 max-w-full h-full shadow-xl border-s border-default flex flex-col bg-default',
         container: 'flex flex-col h-full overflow-hidden p-0',
@@ -748,7 +954,8 @@ async function handleUncheck(item: PantryItem) {
               v-for="sug in displayedSuggestions"
               :key="sug.item.id"
               :suggestion="sug"
-              @add="handleAddSuggestion"
+              @need="handleNeedIt"
+              @still-have="handleStillHave"
             />
           </TransitionGroup>
         </div>
@@ -764,7 +971,7 @@ async function handleUncheck(item: PantryItem) {
       :modal="true"
       :dismissible="false"
       :close="true"
-      title="Suggestions"
+      title="Do you need?"
       :ui="{
         content: [
           'flex flex-col bg-default transition-[height,max-height] duration-300 ease-out',
@@ -778,7 +985,7 @@ async function handleUncheck(item: PantryItem) {
       @update:open="(val) => { if (!val) isMobileFullScreen = false; }"
     >
       <template #title>
-        <span class="text-lg font-bold text-highlighted">Suggestions</span>
+        <span class="text-lg font-bold text-highlighted">Do you need?</span>
       </template>
 
       <template #body>
@@ -803,12 +1010,23 @@ async function handleUncheck(item: PantryItem) {
               v-for="sug in displayedSuggestions"
               :key="sug.item.id"
               :suggestion="sug"
-              @add="handleAddSuggestion"
+              @need="handleNeedIt"
+              @still-have="handleStillHave"
             />
           </TransitionGroup>
         </div>
       </template>
     </UDrawer>
+
+    <!-- Anomaly Modal (Desktop Modal / Mobile Nested Drawer) -->
+    <AnomalyModal
+      v-model:open="isAnomalyOpen"
+      :item="anomalyItem"
+      :anomaly-type="anomalyType"
+      :expected-days="anomalyExpectedDays"
+      :lasted-days="anomalyLastedDays"
+      @select="handleAnomalySelect"
+    />
   </div>
 </template>
 

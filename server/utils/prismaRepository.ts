@@ -31,7 +31,10 @@ export interface PantryItemRow {
   unit: string;
   frequencyDays: number;
   frequencyLabel: string;
+  autoFrequency?: boolean;
+  lastSuggestedAt?: unknown;
   lastPurchasedAt: unknown;
+  lastPurchasedAtPrevious?: unknown;
   nextDueDate: unknown;
   inShoppingList: boolean;
   shoppingListQuantity: number;
@@ -41,6 +44,8 @@ export interface PantryItemRow {
 }
 
 export function toPantryItem(row: PantryItemRow): PantryItem {
+  const r = (row as unknown) as Record<string, unknown>;
+  const autoFreq = r.autoFrequency !== undefined ? r.autoFrequency : r.auto_frequency;
   return {
     id: row.id,
     name: row.name,
@@ -48,15 +53,18 @@ export function toPantryItem(row: PantryItemRow): PantryItem {
     inStock: Boolean(row.inStock),
     quantity: Number(row.quantity),
     unit: row.unit,
-    frequencyDays: Number(row.frequencyDays),
+    frequencyDays: Math.round(Number(row.frequencyDays)),
     frequencyLabel: row.frequencyLabel,
-    lastPurchasedAt: toIsoString(row.lastPurchasedAt),
-    nextDueDate: toIsoString(row.nextDueDate),
+    autoFrequency: autoFreq !== undefined ? Boolean(autoFreq) : true,
+    lastSuggestedAt: toIsoString(r.lastSuggestedAt ?? r.last_suggested_at),
+    lastPurchasedAt: toIsoString(r.lastPurchasedAt ?? r.last_purchased_at),
+    lastPurchasedAtPrevious: toIsoString(r.lastPurchasedAtPrevious ?? r.last_purchased_at_previous),
+    nextDueDate: toIsoString(r.nextDueDate ?? r.next_due_date),
     inShoppingList: Boolean(row.inShoppingList),
     shoppingListQuantity: Number(row.shoppingListQuantity),
     notes: row.notes || undefined,
-    createdAt: toIsoString(row.createdAt) || new Date().toISOString(),
-    updatedAt: toIsoString(row.updatedAt) || new Date().toISOString(),
+    createdAt: toIsoString(r.createdAt ?? r.created_at) || new Date().toISOString(),
+    updatedAt: toIsoString(r.updatedAt ?? r.updated_at) || new Date().toISOString(),
   };
 }
 
@@ -119,9 +127,12 @@ export class PrismaPantryRepository implements PantryRepository {
 
     const now = new Date();
     const frequencyDays = data.frequencyDays ?? 7;
-    const frequencyLabel = getFrequencyLabel(frequencyDays);
+    const frequencyLabel = getFrequencyLabel(Math.round(frequencyDays));
     const lastPurchasedAt = data.lastPurchasedAt !== undefined ? data.lastPurchasedAt : (data.inStock !== false ? now.toISOString() : null);
-    const nextDueDate = calculateNextDueDate(lastPurchasedAt, frequencyDays);
+    const nextDueDate = calculateNextDueDate(lastPurchasedAt, Math.round(frequencyDays));
+    const autoFrequency = data.autoFrequency ?? true;
+    const lastSuggestedAt = data.lastSuggestedAt ? toIsoString(data.lastSuggestedAt) : null;
+    const lastPurchasedAtPrevious = data.lastPurchasedAtPrevious ? toIsoString(data.lastPurchasedAtPrevious) : null;
 
     const row = await this.client.orm.public.PantryItem.create({
       name: trimmedName,
@@ -131,7 +142,10 @@ export class PrismaPantryRepository implements PantryRepository {
       unit: data.unit?.trim() || "items",
       frequencyDays,
       frequencyLabel,
+      autoFrequency,
+      lastSuggestedAt,
       lastPurchasedAt: lastPurchasedAt || null,
+      lastPurchasedAtPrevious,
       nextDueDate: nextDueDate || null,
       inShoppingList: data.inShoppingList ?? false,
       shoppingListQuantity: data.shoppingListQuantity ?? 1,
@@ -156,11 +170,6 @@ export class PrismaPantryRepository implements PantryRepository {
       updates.name = trimmed;
     }
 
-    const frequencyDays = updates.frequencyDays !== undefined ? updates.frequencyDays : current.frequencyDays;
-    const frequencyLabel = getFrequencyLabel(frequencyDays);
-    const lastPurchasedAt = updates.lastPurchasedAt !== undefined ? updates.lastPurchasedAt : current.lastPurchasedAt;
-    const nextDueDate = calculateNextDueDate(lastPurchasedAt, frequencyDays);
-
     const updateData: Record<string, unknown> = {};
     if (updates.name !== undefined) updateData.name = updates.name;
     if (updates.category !== undefined) updateData.category = updates.category;
@@ -170,10 +179,23 @@ export class PrismaPantryRepository implements PantryRepository {
     if (updates.inShoppingList !== undefined) updateData.inShoppingList = updates.inShoppingList;
     if (updates.shoppingListQuantity !== undefined) updateData.shoppingListQuantity = updates.shoppingListQuantity;
     if (updates.notes !== undefined) updateData.notes = updates.notes;
-    updateData.frequencyDays = frequencyDays;
-    updateData.frequencyLabel = frequencyLabel;
-    updateData.lastPurchasedAt = lastPurchasedAt || null;
-    updateData.nextDueDate = nextDueDate || null;
+    if (updates.autoFrequency !== undefined) updateData.autoFrequency = updates.autoFrequency;
+    if (updates.lastSuggestedAt !== undefined) updateData.lastSuggestedAt = updates.lastSuggestedAt;
+    if (updates.lastPurchasedAtPrevious !== undefined) updateData.lastPurchasedAtPrevious = updates.lastPurchasedAtPrevious;
+
+    const frequencyDays = updates.frequencyDays !== undefined ? updates.frequencyDays : current.frequencyDays;
+    const lastPurchasedAt = updates.lastPurchasedAt !== undefined ? updates.lastPurchasedAt : current.lastPurchasedAt;
+
+    if (updates.frequencyDays !== undefined) {
+      updateData.frequencyDays = updates.frequencyDays;
+      updateData.frequencyLabel = getFrequencyLabel(Math.round(updates.frequencyDays));
+    }
+    if (updates.lastPurchasedAt !== undefined) {
+      updateData.lastPurchasedAt = lastPurchasedAt || null;
+    }
+    if (updates.frequencyDays !== undefined || updates.lastPurchasedAt !== undefined) {
+      updateData.nextDueDate = calculateNextDueDate(lastPurchasedAt, Math.round(frequencyDays)) || null;
+    }
 
     const row = await this.client.orm.public.PantryItem.where({ id }).update(updateData);
     return toPantryItem(row);
@@ -232,7 +254,9 @@ export class PrismaPantryRepository implements PantryRepository {
 
     return this.update(id, {
       inStock: true,
+      lastPurchasedAtPrevious: item.lastPurchasedAt,
       lastPurchasedAt: now,
+      lastSuggestedAt: null,
       inShoppingList: false,
       quantity: item.shoppingListQuantity > 0 ? item.shoppingListQuantity : 1,
     });
@@ -271,5 +295,13 @@ export class PrismaPantryRepository implements PantryRepository {
       }
     }
     return updated;
+  }
+
+  async markSuggested(itemIds: string[], now: Date = new Date()): Promise<void> {
+    if (!itemIds || itemIds.length === 0) return;
+    const nowIso = now.toISOString();
+    await this.client.orm.public.PantryItem.where((p) => p.id.in(itemIds)).update({
+      lastSuggestedAt: nowIso,
+    });
   }
 }

@@ -75,15 +75,23 @@ export function formatLastBoughtLabel(isoDate: string | null, now: Date = new Da
   return `Bought ${formattedDate}`;
 }
 
-export function formatFrequencyLabel(item: { frequencyDays?: number; frequencyLabel?: string }): string {
+export function formatFrequencyLabel(item: {
+  frequencyDays?: number;
+  frequencyLabel?: string;
+  autoFrequency?: boolean;
+}): string {
   if (!item.frequencyDays || item.frequencyDays <= 0) {
     return "No recurring frequency";
   }
   const label = item.frequencyLabel || `Every ${item.frequencyDays} days`;
+  const prefix = item.autoFrequency ? "Needed" : "Repeats";
   if (label.toLowerCase().startsWith("repeats")) {
-    return label;
+    return label.replace(/^repeats/i, prefix);
   }
-  return `Repeats ${label.toLowerCase()}`;
+  if (label.toLowerCase().startsWith("needed")) {
+    return label.replace(/^needed/i, prefix);
+  }
+  return `${prefix} ${label.toLowerCase()}`;
 }
 
 export function getCategoryColor(category: string): { bg: string; text: string; border: string } {

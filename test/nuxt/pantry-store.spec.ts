@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { registerEndpoint } from "@nuxt/test-utils/runtime";
+import { readBody } from "h3";
 import { setActivePinia, createPinia } from "pinia";
 import { usePantryStore } from "~~/app/stores/pantry";
 import type { PantryItem } from "~~/shared/types";
@@ -31,7 +33,10 @@ describe("Pinia Pantry Store", () => {
       unit: "cartons",
       frequencyDays: 7,
       frequencyLabel: "Weekly (7d)",
+      autoFrequency: true,
+      lastSuggestedAt: null,
       lastPurchasedAt: null,
+      lastPurchasedAtPrevious: null,
       nextDueDate: null,
       inShoppingList: true,
       shoppingListQuantity: 1,
@@ -48,7 +53,10 @@ describe("Pinia Pantry Store", () => {
       unit: "bag",
       frequencyDays: 5,
       frequencyLabel: "Every 5 days",
+      autoFrequency: true,
+      lastSuggestedAt: null,
       lastPurchasedAt: null,
+      lastPurchasedAtPrevious: null,
       nextDueDate: null,
       inShoppingList: false,
       shoppingListQuantity: 1,
@@ -81,7 +89,10 @@ describe("Pinia Pantry Store", () => {
         unit: "loaf",
         frequencyDays: 7,
         frequencyLabel: "Weekly",
+        autoFrequency: true,
+        lastSuggestedAt: null,
         lastPurchasedAt: null,
+        lastPurchasedAtPrevious: null,
         nextDueDate: null,
         inShoppingList: false,
         shoppingListQuantity: 1,
@@ -98,7 +109,10 @@ describe("Pinia Pantry Store", () => {
         unit: "bottle",
         frequencyDays: 7,
         frequencyLabel: "Weekly",
+        autoFrequency: true,
+        lastSuggestedAt: null,
         lastPurchasedAt: null,
+        lastPurchasedAtPrevious: null,
         nextDueDate: null,
         inShoppingList: false,
         shoppingListQuantity: 1,
@@ -145,7 +159,10 @@ describe("Pinia Pantry Store", () => {
       unit: "jar",
       frequencyDays: 30,
       frequencyLabel: "Monthly",
+      autoFrequency: true,
+      lastSuggestedAt: null,
       lastPurchasedAt: null,
+      lastPurchasedAtPrevious: null,
       nextDueDate: null,
       inShoppingList: false,
       shoppingListQuantity: 1,
@@ -173,7 +190,10 @@ describe("Pinia Pantry Store", () => {
       unit: "pack",
       frequencyDays: 7,
       frequencyLabel: "Weekly",
+      autoFrequency: true,
+      lastSuggestedAt: null,
       lastPurchasedAt: null,
+      lastPurchasedAtPrevious: null,
       nextDueDate: null,
       inShoppingList: false,
       shoppingListQuantity: 1,
@@ -211,8 +231,8 @@ describe("Pinia Pantry Store", () => {
 
   it("handles checkOffShoppingItem by unshifting to sessionPurchased and deduplicating", async () => {
     const store = usePantryStore();
-    const fetchMock = vi.fn().mockResolvedValue({ success: true });
-    vi.stubGlobal("$fetch", fetchMock);
+    registerEndpoint("/api/shopping-list/item-1/check", () => ({ success: true }));
+    registerEndpoint("/api/shopping-list/item-2/check", () => ({ success: true }));
     store.loadData = vi.fn().mockResolvedValue(undefined);
 
     const item1: PantryItem = {
@@ -224,7 +244,10 @@ describe("Pinia Pantry Store", () => {
       unit: "bottle",
       frequencyDays: 7,
       frequencyLabel: "Weekly",
+      autoFrequency: true,
+      lastSuggestedAt: null,
       lastPurchasedAt: null,
+      lastPurchasedAtPrevious: null,
       nextDueDate: null,
       inShoppingList: true,
       shoppingListQuantity: 1,
@@ -241,7 +264,10 @@ describe("Pinia Pantry Store", () => {
       unit: "loaf",
       frequencyDays: 5,
       frequencyLabel: "5 days",
+      autoFrequency: true,
+      lastSuggestedAt: null,
       lastPurchasedAt: null,
+      lastPurchasedAtPrevious: null,
       nextDueDate: null,
       inShoppingList: true,
       shoppingListQuantity: 1,
@@ -265,12 +291,15 @@ describe("Pinia Pantry Store", () => {
     expect(store.sessionPurchased.length).toBe(2);
     expect(store.sessionPurchased[0].id).toBe("item-1");
     expect(store.sessionPurchased[1].id).toBe("item-2");
-
-    vi.unstubAllGlobals();
   });
 
-  it("handles uncheckShoppingItem by removing from sessionPurchased", async () => {
+  it("handles uncheckShoppingItem by removing from sessionPurchased and calling PUT /api/pantry/:id with rollback payload", async () => {
     const store = usePantryStore();
+    let putPayload: Record<string, unknown> | null = null;
+    registerEndpoint("/api/pantry/item-1", async (event) => {
+      putPayload = await readBody(event);
+      return { success: true };
+    });
     store.loadData = vi.fn().mockResolvedValue(undefined);
 
     store.sessionPurchased = [
@@ -278,6 +307,7 @@ describe("Pinia Pantry Store", () => {
       { id: "item-2", name: "Bread", timestamp: "10:05" },
     ];
 
+    const prevDate = "2026-08-01T12:00:00.000Z";
     const item1: PantryItem = {
       id: "item-1",
       name: "Milk",
@@ -287,7 +317,10 @@ describe("Pinia Pantry Store", () => {
       unit: "bottle",
       frequencyDays: 7,
       frequencyLabel: "Weekly",
-      lastPurchasedAt: null,
+      autoFrequency: true,
+      lastSuggestedAt: null,
+      lastPurchasedAt: "2026-09-01T12:00:00.000Z",
+      lastPurchasedAtPrevious: prevDate,
       nextDueDate: null,
       inShoppingList: false,
       shoppingListQuantity: 1,
@@ -298,5 +331,63 @@ describe("Pinia Pantry Store", () => {
     await store.uncheckShoppingItem(item1);
     expect(store.sessionPurchased.length).toBe(1);
     expect(store.sessionPurchased[0].id).toBe("item-2");
+
+    expect(putPayload).toEqual({
+      lastPurchasedAt: prevDate,
+      inShoppingList: true,
+      inStock: false,
+      lastPurchasedAtPrevious: null,
+    });
+  });
+
+  it("restores pre-tick purchase date when unticking even if item.lastPurchasedAtPrevious was null", async () => {
+    const store = usePantryStore();
+    let putPayload: Record<string, unknown> | null = null;
+    registerEndpoint("/api/pantry/item-orig", async (event) => {
+      putPayload = await readBody(event);
+      return { success: true };
+    });
+    registerEndpoint("/api/shopping-list/item-orig/check", () => ({
+      success: true,
+      data: { ...item, lastPurchasedAtPrevious: originalPurchaseDate, inStock: true, inShoppingList: false },
+    }));
+    store.loadData = vi.fn().mockResolvedValue(undefined);
+
+    const originalPurchaseDate = "2026-09-10T10:00:00.000Z";
+    const item: PantryItem = {
+      id: "item-orig",
+      name: "Apples",
+      category: "Produce",
+      inStock: false,
+      quantity: 1,
+      unit: "bag",
+      frequencyDays: 7,
+      frequencyLabel: "Weekly",
+      autoFrequency: true,
+      lastSuggestedAt: null,
+      lastPurchasedAt: originalPurchaseDate,
+      lastPurchasedAtPrevious: null,
+      nextDueDate: null,
+      inShoppingList: true,
+      shoppingListQuantity: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    store.items = [item];
+
+    // User ticks item off
+    await store.checkOffShoppingItem(item);
+    expect(store.sessionPurchased[0].previousLastPurchasedAt).toBe(originalPurchaseDate);
+
+    // User unticks item (simulate item with null lastPurchasedAtPrevious)
+    const tickedItem: PantryItem = {
+      ...item,
+      lastPurchasedAt: "2026-10-01T12:00:00.000Z",
+      lastPurchasedAtPrevious: null,
+    };
+    await store.uncheckShoppingItem(tickedItem);
+
+    expect(putPayload?.lastPurchasedAt).toBe(originalPurchaseDate);
+    expect(store.items[0].lastPurchasedAt).toBe(originalPurchaseDate);
   });
 });

@@ -14,7 +14,10 @@ describe("SuggestionListItem component", () => {
     unit: "bag",
     frequencyDays: 14,
     frequencyLabel: "Every 2 weeks",
+    autoFrequency: true,
+    lastSuggestedAt: null,
     lastPurchasedAt: "2026-09-01T12:00:00.000Z",
+    lastPurchasedAtPrevious: null,
     nextDueDate: "2026-09-15T12:00:00.000Z",
     inShoppingList: false,
     shoppingListQuantity: 1,
@@ -43,29 +46,46 @@ describe("SuggestionListItem component", () => {
     expect(wrapper.classes()).toContain("border-b");
   });
 
-  it("renders plus icon ghost secondary button on the left", async () => {
+  it("renders Need it (tick) and Still have it (cross) buttons on the right", async () => {
     const wrapper = await mountSuspended(SuggestionListItem, {
       props: { suggestion: baseSuggestion },
     });
 
-    const plusBtn = wrapper.find("button[aria-label='Add to shopping list']");
-    expect(plusBtn.exists()).toBe(true);
+    const needBtn = wrapper.find("button[aria-label='Need it']");
+    expect(needBtn.exists()).toBe(true);
+    const needIcon = needBtn.findComponent({ name: "UIcon" });
+    expect(needIcon.exists()).toBe(true);
+    expect(needIcon.props("name")).toBe("i-lucide-check");
 
-    const icon = plusBtn.findComponent({ name: "UIcon" });
-    expect(icon.exists()).toBe(true);
-    expect(icon.props("name")).toBe("i-lucide-plus");
+    const stillHaveBtn = wrapper.find("button[aria-label='Still have it']");
+    expect(stillHaveBtn.exists()).toBe(true);
+    const stillHaveIcon = stillHaveBtn.findComponent({ name: "UIcon" });
+    expect(stillHaveIcon.exists()).toBe(true);
+    expect(stillHaveIcon.props("name")).toBe("i-lucide-x");
   });
 
-  it("emits 'add' event when the plus button is clicked", async () => {
+  it("emits 'need' event when the Need it button is clicked", async () => {
     const wrapper = await mountSuspended(SuggestionListItem, {
       props: { suggestion: baseSuggestion },
     });
 
-    const plusBtn = wrapper.find("button[aria-label='Add to shopping list']");
-    await plusBtn.trigger("click");
+    const needBtn = wrapper.find("button[aria-label='Need it']");
+    await needBtn.trigger("click");
 
-    expect(wrapper.emitted("add")).toBeTruthy();
-    expect(wrapper.emitted("add")?.[0][0]).toEqual(baseItem);
+    expect(wrapper.emitted("need")).toBeTruthy();
+    expect(wrapper.emitted("need")?.[0][0]).toEqual(baseItem);
+  });
+
+  it("emits 'still-have' event when the Still have it button is clicked", async () => {
+    const wrapper = await mountSuspended(SuggestionListItem, {
+      props: { suggestion: baseSuggestion },
+    });
+
+    const stillHaveBtn = wrapper.find("button[aria-label='Still have it']");
+    await stillHaveBtn.trigger("click");
+
+    expect(wrapper.emitted("still-have")).toBeTruthy();
+    expect(wrapper.emitted("still-have")?.[0][0]).toEqual(baseItem);
   });
 
   it("renders item title without opening the edit modal", async () => {

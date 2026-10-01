@@ -287,4 +287,19 @@ describe("PrismaPantryRepository (Unit Tests with Mocked Prisma Client)", () => 
     const found = await repo.getById(existing.id);
     expect(found).toBeNull();
   });
+
+  it("marks suggested items with timestamp", async () => {
+    const updateMock = vi.fn().mockResolvedValue(undefined);
+    mockCtx.db.orm.public.PantryItem.where = vi.fn().mockReturnValue({
+      update: updateMock,
+    }) as unknown as never;
+
+    const testDate = new Date("2026-09-15T10:00:00.000Z");
+    await repo.markSuggested(["id-1", "id-2"], testDate);
+
+    expect(updateMock).toHaveBeenCalledWith({
+      lastSuggestedAt: testDate.toISOString(),
+    });
+  });
 });
+

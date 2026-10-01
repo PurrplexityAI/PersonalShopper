@@ -15,6 +15,13 @@
         "models": {
           "PantryItem": {
             "fields": {
+              "autoFrequency": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "category": {
                 "nullable": false,
                 "type": {
@@ -32,7 +39,7 @@
               "frequencyDays": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/float8@1",
                   "kind": "scalar"
                 }
               },
@@ -65,6 +72,20 @@
                 }
               },
               "lastPurchasedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastPurchasedAtPrevious": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastSuggestedAt": {
                 "nullable": true,
                 "type": {
                   "codecId": "pg/timestamptz-string@1",
@@ -124,6 +145,9 @@
             "relations": {},
             "storage": {
               "fields": {
+                "autoFrequency": {
+                  "column": "autoFrequency"
+                },
                 "category": {
                   "column": "category"
                 },
@@ -147,6 +171,12 @@
                 },
                 "lastPurchasedAt": {
                   "column": "lastPurchasedAt"
+                },
+                "lastPurchasedAtPrevious": {
+                  "column": "lastPurchasedAtPrevious"
+                },
+                "lastSuggestedAt": {
+                  "column": "lastSuggestedAt"
                 },
                 "name": {
                   "column": "name"
@@ -185,6 +215,15 @@
           "table": {
             "pantry_items": {
               "columns": {
+                "autoFrequency": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
                 "category": {
                   "codecId": "pg/text@1",
                   "default": {
@@ -204,12 +243,12 @@
                   "nullable": false
                 },
                 "frequencyDays": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/float8@1",
                   "default": {
                     "kind": "literal",
                     "value": 7
                   },
-                  "nativeType": "int4",
+                  "nativeType": "float8",
                   "nullable": false
                 },
                 "frequencyLabel": {
@@ -245,6 +284,16 @@
                   "nullable": false
                 },
                 "lastPurchasedAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "lastPurchasedAtPrevious": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "lastSuggestedAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "nativeType": "timestamptz",
                   "nullable": true
@@ -322,7 +371,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "e800deaccf0569a68b789b708a152f1beaa0859a2795404de57e431b6b4ecabb"
+    "storageHash": "16df9b92f802a3747711da3b60f15d71841c22425e53684f7d752eef93d6e4e3"
   },
   "execution": {
     "executionHash": "bbed922a1473e659dbd0ad0fc62cc9064081a84cc12aeb8f4708b872717abb01",

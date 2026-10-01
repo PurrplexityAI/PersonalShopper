@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'e800deaccf0569a68b789b708a152f1beaa0859a2795404de57e431b6b4ecabb'>;
+  StorageHashBase<'16df9b92f802a3747711da3b60f15d71841c22425e53684f7d752eef93d6e4e3'>;
 export type ExecutionHash =
   ExecutionHashBase<'bbed922a1473e659dbd0ad0fc62cc9064081a84cc12aeb8f4708b872717abb01'>;
 export type ProfileHash =
@@ -251,14 +251,17 @@ type DefaultLiteralValue<CodecId extends string, Encoded> = CodecId extends keyo
 export type FieldOutputTypes = {
   readonly public: {
     readonly PantryItem: {
+      readonly autoFrequency: CodecTypes['pg/bool@1']['output'];
       readonly category: CodecTypes['pg/text@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
-      readonly frequencyDays: CodecTypes['pg/int4@1']['output'];
+      readonly frequencyDays: CodecTypes['pg/float8@1']['output'];
       readonly frequencyLabel: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly inShoppingList: CodecTypes['pg/bool@1']['output'];
       readonly inStock: CodecTypes['pg/bool@1']['output'];
       readonly lastPurchasedAt: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly lastPurchasedAtPrevious: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly lastSuggestedAt: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly nextDueDate: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
@@ -272,14 +275,17 @@ export type FieldOutputTypes = {
 export type FieldInputTypes = {
   readonly public: {
     readonly PantryItem: {
+      readonly autoFrequency: CodecTypes['pg/bool@1']['input'];
       readonly category: CodecTypes['pg/text@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
-      readonly frequencyDays: CodecTypes['pg/int4@1']['input'];
+      readonly frequencyDays: CodecTypes['pg/float8@1']['input'];
       readonly frequencyLabel: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly inShoppingList: CodecTypes['pg/bool@1']['input'];
       readonly inStock: CodecTypes['pg/bool@1']['input'];
       readonly lastPurchasedAt: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly lastPurchasedAtPrevious: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly lastSuggestedAt: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly nextDueDate: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
@@ -293,14 +299,17 @@ export type FieldInputTypes = {
 export type StorageColumnTypes = {
   readonly public: {
     readonly pantry_items: {
+      readonly autoFrequency: CodecTypes['pg/bool@1']['output'];
       readonly category: CodecTypes['pg/text@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
-      readonly frequencyDays: CodecTypes['pg/int4@1']['output'];
+      readonly frequencyDays: CodecTypes['pg/float8@1']['output'];
       readonly frequencyLabel: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly inShoppingList: CodecTypes['pg/bool@1']['output'];
       readonly inStock: CodecTypes['pg/bool@1']['output'];
       readonly lastPurchasedAt: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly lastPurchasedAtPrevious: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly lastSuggestedAt: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly nextDueDate: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
@@ -314,14 +323,17 @@ export type StorageColumnTypes = {
 export type StorageColumnInputTypes = {
   readonly public: {
     readonly pantry_items: {
+      readonly autoFrequency: CodecTypes['pg/bool@1']['input'];
       readonly category: CodecTypes['pg/text@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
-      readonly frequencyDays: CodecTypes['pg/int4@1']['input'];
+      readonly frequencyDays: CodecTypes['pg/float8@1']['input'];
       readonly frequencyLabel: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly inShoppingList: CodecTypes['pg/bool@1']['input'];
       readonly inStock: CodecTypes['pg/bool@1']['input'];
       readonly lastPurchasedAt: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly lastPurchasedAtPrevious: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly lastSuggestedAt: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly nextDueDate: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
@@ -335,14 +347,17 @@ export type StorageColumnInputTypes = {
 
 export namespace Models {
   export type public_PantryItem = {
+    autoFrequency: CodecTypes['pg/bool@1']['output'];
     category: CodecTypes['pg/text@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    frequencyDays: CodecTypes['pg/int4@1']['output'];
+    frequencyDays: CodecTypes['pg/float8@1']['output'];
     frequencyLabel: CodecTypes['pg/text@1']['output'];
     id: CodecTypes['pg/text@1']['output'];
     inShoppingList: CodecTypes['pg/bool@1']['output'];
     inStock: CodecTypes['pg/bool@1']['output'];
     lastPurchasedAt: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+    lastPurchasedAtPrevious: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+    lastSuggestedAt: CodecTypes['pg/timestamptz-string@1']['output'] | null;
     name: CodecTypes['pg/text@1']['output'];
     nextDueDate: CodecTypes['pg/timestamptz-string@1']['output'] | null;
     notes: CodecTypes['pg/text@1']['output'] | null;
@@ -380,6 +395,15 @@ type ContractBase = Omit<
           readonly table: {
             readonly pantry_items: {
               columns: {
+                readonly autoFrequency: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
+                  };
+                };
                 readonly category: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -396,12 +420,12 @@ type ContractBase = Omit<
                   readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
                 };
                 readonly frequencyDays: {
-                  readonly nativeType: 'int4';
-                  readonly codecId: 'pg/int4@1';
+                  readonly nativeType: 'float8';
+                  readonly codecId: 'pg/float8@1';
                   readonly nullable: false;
                   readonly default: {
                     readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/int4@1', 7>;
+                    readonly value: DefaultLiteralValue<'pg/float8@1', 7>;
                   };
                 };
                 readonly frequencyLabel: {
@@ -437,6 +461,16 @@ type ContractBase = Omit<
                   };
                 };
                 readonly lastPurchasedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: true;
+                };
+                readonly lastPurchasedAtPrevious: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: true;
+                };
+                readonly lastSuggestedAt: {
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-string@1';
                   readonly nullable: true;
@@ -517,6 +551,10 @@ type ContractBase = Omit<
         readonly models: {
           readonly PantryItem: {
             readonly fields: {
+              readonly autoFrequency: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly category: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -530,7 +568,7 @@ type ContractBase = Omit<
               };
               readonly frequencyDays: {
                 readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
               };
               readonly frequencyLabel: {
                 readonly nullable: false;
@@ -549,6 +587,20 @@ type ContractBase = Omit<
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
               readonly lastPurchasedAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly lastPurchasedAtPrevious: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly lastSuggestedAt: {
                 readonly nullable: true;
                 readonly type: {
                   readonly kind: 'scalar';
@@ -595,6 +647,7 @@ type ContractBase = Omit<
               readonly table: 'pantry_items';
               readonly namespaceId: 'public';
               readonly fields: {
+                readonly autoFrequency: { readonly column: 'autoFrequency' };
                 readonly category: { readonly column: 'category' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly frequencyDays: { readonly column: 'frequencyDays' };
@@ -603,6 +656,8 @@ type ContractBase = Omit<
                 readonly inShoppingList: { readonly column: 'inShoppingList' };
                 readonly inStock: { readonly column: 'inStock' };
                 readonly lastPurchasedAt: { readonly column: 'lastPurchasedAt' };
+                readonly lastPurchasedAtPrevious: { readonly column: 'lastPurchasedAtPrevious' };
+                readonly lastSuggestedAt: { readonly column: 'lastSuggestedAt' };
                 readonly name: { readonly column: 'name' };
                 readonly nextDueDate: { readonly column: 'nextDueDate' };
                 readonly notes: { readonly column: 'notes' };

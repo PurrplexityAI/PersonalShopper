@@ -1,0 +1,100 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.pantry_items",
+    "label": "Create table \"pantry_items\"",
+    "summary": "Creates table \"pantry_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "pantry_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"pantry_items\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pantry_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"pantry_items\"",
+        "sql": "CREATE TABLE \"public\".\"pantry_items\" (\n  \"category\" text DEFAULT 'General' NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"frequencyDays\" int4 DEFAULT 7 NOT NULL,\n  \"frequencyLabel\" text DEFAULT 'Weekly (7d)' NOT NULL,\n  \"id\" text NOT NULL,\n  \"inShoppingList\" bool DEFAULT false NOT NULL,\n  \"inStock\" bool DEFAULT true NOT NULL,\n  \"lastPurchasedAt\" timestamptz,\n  \"name\" text NOT NULL,\n  \"nextDueDate\" timestamptz,\n  \"notes\" text,\n  \"quantity\" int4 DEFAULT 1 NOT NULL,\n  \"shoppingListQuantity\" int4 DEFAULT 1 NOT NULL,\n  \"unit\" text DEFAULT 'items' NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"pantry_items\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pantry_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.pantry_items.pantry_items_name_key",
+    "label": "Add unique constraint on \"pantry_items\" (name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "pantry_items_name_key",
+        "table": "pantry_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"pantry_items_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pantry_items_name_key",
+          "public",
+          "\"public\".\"pantry_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"pantry_items_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"pantry_items\" ADD CONSTRAINT \"pantry_items_name_key\" UNIQUE (\"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"pantry_items_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pantry_items_name_key",
+          "public",
+          "\"public\".\"pantry_items\""
+        ]
+      }
+    ]
+  }
+]

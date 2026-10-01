@@ -161,7 +161,7 @@ const frequencyFormatted = computed(() => formatFrequencyLabel(props.item));
           variant="solid"
           size="md"
           icon="i-lucide-plus"
-          @click="store.addToShoppingList({ nameOrId: item.id, quantity: 1 })"
+          @click="store.handleNeedIt(item)"
         >
           Add to shopping list
         </UButton>
