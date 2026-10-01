@@ -186,6 +186,43 @@ describe("ShoppingListView component", () => {
         window.innerWidth = originalWidth;
       }
     });
+
+    it("triggers SFT anomaly modal when adding an existing pantry item manually via input bar", async () => {
+      const store = usePantryStore();
+      const testItem: PantryItem = {
+        id: "pantry-item-sft",
+        name: "Coffee Beans",
+        category: "Beverages",
+        inStock: true,
+        quantity: 1,
+        unit: "bag",
+        frequencyDays: 30,
+        frequencyLabel: "Monthly (30d)",
+        autoFrequency: true,
+        lastSuggestedAt: null,
+        lastPurchasedAt: new Date().toISOString(),
+        lastPurchasedAtPrevious: null,
+        nextDueDate: new Date(Date.now() + 30 * 86400 * 1000).toISOString(),
+        inShoppingList: false,
+        shoppingListQuantity: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      store.items = [testItem];
+
+      const wrapper = await mountSuspended(ShoppingListView);
+      const desktopInput = wrapper.find(".hidden.sm\\:block input");
+      await desktopInput.setValue("Coffee Beans");
+      await desktopInput.trigger("keydown.enter");
+      await nextTick();
+
+      // Anomaly modal should now be open for Coffee Beans
+      const anomalyModal = wrapper.findComponent({ name: "AnomalyModal" });
+      expect(anomalyModal.exists()).toBe(true);
+      expect(anomalyModal.props("open")).toBe(true);
+      expect(anomalyModal.props("anomalyType")).toBe("low");
+      expect(anomalyModal.props("item")?.name).toBe("Coffee Beans");
+    });
   });
 });
 

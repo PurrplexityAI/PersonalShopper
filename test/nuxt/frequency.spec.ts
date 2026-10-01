@@ -176,4 +176,67 @@ describe("calculateBurnRatio - Core Mathematical Baseline (Section 2)", () => {
     expect(result.classification).toBe("normal");
     expect(result.adjustedFrequencyDays).toBe(7);
   });
+
+  it("detects low anomaly for item bought today and suggested in drawer seconds ago", () => {
+    // Due in 30 days, bought 10 minutes ago, drawer rendered 5 seconds ago
+    const now = new Date("2026-10-01T12:00:05.000Z");
+    const lastPurchasedAt = new Date("2026-10-01T11:50:00.000Z").toISOString();
+    const lastSuggestedAt = new Date("2026-10-01T12:00:00.000Z").toISOString();
+
+    const result = calculateBurnRatio(
+      {
+        frequencyDays: 30,
+        lastPurchasedAt,
+        lastSuggestedAt,
+      },
+      now
+    );
+
+    // elapsedDays is ~0.0069 days (< 30)
+    // Even though lastSuggestedAt is set, elapsedDays < frequencyDays sets effectiveElapsedDays = elapsedDays
+    expect(result.elapsedDays).toBeLessThan(1);
+    expect(result.effectiveElapsedDays).toBeLessThan(1);
+    expect(result.burnRatio).toBeLessThanOrEqual(0.5);
+    expect(result.classification).toBe("low_anomaly");
+  });
+
+  it("evaluates imperative add correctly by substituting lastSuggestedAt with now", () => {
+    const now = new Date("2026-10-01T12:00:00.000Z");
+    const lastPurchasedAt = new Date("2026-10-01T10:00:00.000Z").toISOString();
+    // In imperative add, lastSuggestedAt is substituted for now()
+    const substitutedItem = {
+      frequencyDays: 30,
+      lastPurchasedAt,
+      lastSuggestedAt: now.toISOString(),
+    };
+
+    const result = calculateBurnRatio(substitutedItem, now);
+
+    expect(result.observedDelayDays).toBe(0);
+    expect(result.effectiveElapsedDays).toBeLessThan(1);
+    expect(result.burnRatio).toBeLessThanOrEqual(0.5);
+    expect(result.classification).toBe("low_anomaly");
+  });
+
+  it("does not penalize user who opens app late when drawer was just rendered (sub-minute exposure delay)", () => {
+    // frequencyDays = 30, bought 45 days ago, drawer just rendered 10 seconds ago
+    const now = new Date("2026-10-15T12:00:10.000Z");
+    const lastPurchasedAt = new Date("2026-09-01T12:00:00.000Z").toISOString();
+    const lastSuggestedAt = new Date("2026-10-15T12:00:00.000Z").toISOString();
+
+    const result = calculateBurnRatio(
+      {
+        frequencyDays: 30,
+        lastPurchasedAt,
+        lastSuggestedAt,
+      },
+      now
+    );
+
+    // 10 seconds delay is < 0.001 days, so effectiveElapsedDays clamps to frequencyDays (30)
+    expect(result.elapsedDays).toBeCloseTo(44, 0);
+    expect(result.effectiveElapsedDays).toBe(30);
+    expect(result.burnRatio).toBe(1.0);
+    expect(result.classification).toBe("normal");
+  });
 });

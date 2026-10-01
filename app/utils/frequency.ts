@@ -91,12 +91,10 @@ export function calculateBurnRatio(
 
   // Step B: Calculate Effective Burn Ratio
   let effective_elapsed_days: number;
-  if (observed_delay_days === 0) {
-    if (elapsed_days < frequencyDays) {
-      effective_elapsed_days = elapsed_days;
-    } else {
-      effective_elapsed_days = frequencyDays;
-    }
+  if (elapsed_days < frequencyDays) {
+    effective_elapsed_days = elapsed_days;
+  } else if (observed_delay_days === 0 || observed_delay_days < 0.001) {
+    effective_elapsed_days = frequencyDays;
   } else {
     effective_elapsed_days = frequencyDays + observed_delay_days;
   }

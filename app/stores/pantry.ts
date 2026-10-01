@@ -459,7 +459,11 @@ export const usePantryStore = defineStore("pantry", {
         return;
       }
 
-      const result = calculateBurnRatio(item, new Date());
+      // When adding to the shopping list from the pantry item (pantry inventory screen) only,
+      // substitute the suggestedAt for now() rather than the database value,
+      // on the basis that the user is making an imperative action.
+      const evalItem = { ...item, lastSuggestedAt: new Date().toISOString() };
+      const result = calculateBurnRatio(evalItem, new Date());
       if (result.classification === "normal") {
         await this.updateItemDirect(item.id, {
           inShoppingList: true,

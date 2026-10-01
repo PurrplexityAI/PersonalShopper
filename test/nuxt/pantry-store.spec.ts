@@ -390,4 +390,35 @@ describe("Pinia Pantry Store", () => {
     expect(putPayload?.lastPurchasedAt).toBe(originalPurchaseDate);
     expect(store.items[0].lastPurchasedAt).toBe(originalPurchaseDate);
   });
+
+  it("substitutes lastSuggestedAt with now() in handleNeedIt and triggers low anomaly for imperative pantry add", async () => {
+    const store = usePantryStore();
+    const item: PantryItem = {
+      id: "pantry-imperative-item",
+      name: "Olive Oil",
+      category: "Pantry Staples",
+      inStock: true,
+      quantity: 1,
+      unit: "bottle",
+      frequencyDays: 30,
+      frequencyLabel: "Monthly (30d)",
+      autoFrequency: true,
+      // Previous stale suggestedAt from days ago
+      lastSuggestedAt: "2026-09-10T12:00:00.000Z",
+      lastPurchasedAt: new Date().toISOString(),
+      lastPurchasedAtPrevious: null,
+      nextDueDate: new Date(Date.now() + 30 * 86400 * 1000).toISOString(),
+      inShoppingList: false,
+      shoppingListQuantity: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    store.items = [item];
+
+    await store.handleNeedIt(item);
+
+    expect(store.isAnomalyOpen).toBe(true);
+    expect(store.anomalyType).toBe("low");
+    expect(store.anomalyItem?.id).toBe("pantry-imperative-item");
+  });
 });

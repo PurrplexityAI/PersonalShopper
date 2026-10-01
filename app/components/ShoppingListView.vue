@@ -108,9 +108,11 @@ function showSuggestionToast(item: PantryItem) {
   }
 }
 
-async function handleNeedIt(item: PantryItem) {
+async function handleNeedIt(item: PantryItem, isImperative = false) {
   if (item.autoFrequency === false || !item.lastPurchasedAt) {
-    removingSuggestionIds.value.add(item.id);
+    if (!isImperative) {
+      removingSuggestionIds.value.add(item.id);
+    }
     if (selectedCategory.value !== null && selectedCategory.value !== item.category) {
       selectedCategory.value = null;
     }
@@ -119,16 +121,21 @@ async function handleNeedIt(item: PantryItem) {
       lastSuggestedAt: null,
     });
     smoothScrollToItem(item.id);
-    showSuggestionToast(item);
-    setTimeout(() => {
-      removingSuggestionIds.value.delete(item.id);
-    }, 1000);
+    if (!isImperative) {
+      showSuggestionToast(item);
+      setTimeout(() => {
+        removingSuggestionIds.value.delete(item.id);
+      }, 1000);
+    }
     return;
   }
 
-  const result = calculateBurnRatio(item, new Date());
+  const evalItem = isImperative ? { ...item, lastSuggestedAt: new Date().toISOString() } : item;
+  const result = calculateBurnRatio(evalItem, new Date());
   if (result.classification === "normal") {
-    removingSuggestionIds.value.add(item.id);
+    if (!isImperative) {
+      removingSuggestionIds.value.add(item.id);
+    }
     if (selectedCategory.value !== null && selectedCategory.value !== item.category) {
       selectedCategory.value = null;
     }
@@ -138,10 +145,12 @@ async function handleNeedIt(item: PantryItem) {
       lastSuggestedAt: null,
     });
     smoothScrollToItem(item.id);
-    showSuggestionToast(item);
-    setTimeout(() => {
-      removingSuggestionIds.value.delete(item.id);
-    }, 1000);
+    if (!isImperative) {
+      showSuggestionToast(item);
+      setTimeout(() => {
+        removingSuggestionIds.value.delete(item.id);
+      }, 1000);
+    }
   } else {
     anomalyItem.value = item;
     anomalyType.value = result.classification === "high_anomaly" ? "high" : "low";
@@ -275,6 +284,8 @@ async function handleAnomalySelect(option: 1 | 2) {
     smoothScrollToItem(item.id);
     // Don't show toast when smart frequency tracking is triggered
   }
+
+  anomalyItem.value = null;
 
   setTimeout(() => {
     removingSuggestionIds.value.delete(item.id);
@@ -450,20 +461,19 @@ async function selectItem(item: PantryItem, e?: Event) {
   if (item.inShoppingList) {
     smoothScrollToItem(item.id);
   } else {
-    const added = await store.addToShoppingList({ nameOrId: item.id, quantity: 1 });
-    if (added) {
-      smoothScrollToItem(added.id);
-    } else {
-      smoothScrollToItem(item.id);
-    }
+    await handleNeedIt(item, true);
   }
   nextTick(() => {
     resetInput();
-    focusDesktopInput();
+    if (!isAnomalyOpen.value) {
+      focusDesktopInput();
+    }
   });
   setTimeout(() => {
     resetInput();
-    focusDesktopInput();
+    if (!isAnomalyOpen.value) {
+      focusDesktopInput();
+    }
   }, 50);
 }
 
@@ -503,14 +513,11 @@ async function handleSubmitInput() {
     if (selectedCategory.value !== null && selectedCategory.value !== existingInPantry.category) {
       selectedCategory.value = null;
     }
-    const added = await store.addToShoppingList({ nameOrId: existingInPantry.id, quantity: 1 });
-    if (added) {
-      smoothScrollToItem(added.id);
-    } else {
-      smoothScrollToItem(existingInPantry.id);
-    }
+    await handleNeedIt(existingInPantry, true);
     resetInput();
-    focusDesktopInput();
+    if (!isAnomalyOpen.value) {
+      focusDesktopInput();
+    }
     return;
   }
 
