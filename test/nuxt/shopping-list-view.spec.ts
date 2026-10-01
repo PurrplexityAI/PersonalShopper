@@ -98,7 +98,7 @@ describe("ShoppingListView component", () => {
   });
 
   describe("Suggestions Drawer & Buttons", () => {
-    it("renders lightbulb button in desktop title actions slot with tooltip 'Suggestions'", async () => {
+    it("renders lightbulb button in desktop title actions slot with tooltip 'Suggestions' and soft variant", async () => {
       const wrapper = await mountSuspended(ShoppingListView);
       const lightbulbBtn = wrapper.find("button[aria-label='Suggestions']");
       expect(lightbulbBtn.exists()).toBe(true);
@@ -109,11 +109,49 @@ describe("ShoppingListView component", () => {
       expect(icon.props("name")).toBe("i-lucide-lightbulb");
     });
 
-    it("renders mobile floating Suggestions button", async () => {
+    it("renders mobile floating Suggestions button and FAB in a unified centered action bar", async () => {
       const wrapper = await mountSuspended(ShoppingListView);
       const mobileBtn = wrapper.findAll("button").find((b) => b.text().includes("Suggestions"));
       expect(mobileBtn).toBeDefined();
       expect(mobileBtn?.classes()).toContain("rounded-full");
+
+      const fabBtn = wrapper.find("button[aria-label='Add Shopping Item']");
+      expect(fabBtn.exists()).toBe(true);
+      expect(fabBtn.classes()).toContain("rounded-full");
+    });
+
+    it("auto-opens desktop suggestions drawer on first session entry when suggestions exist", async () => {
+      const store = usePantryStore();
+      store.hasCheckedSuggestionsSession = false;
+      store.items = [
+        {
+          id: "sug-item-auto",
+          name: "Organic Milk",
+          category: "Dairy & Eggs",
+          inStock: false,
+          quantity: 1,
+          unit: "bottle",
+          frequencyDays: 7,
+          frequencyLabel: "Weekly (7d)",
+          lastPurchasedAt: null,
+          nextDueDate: null,
+          inShoppingList: false,
+          shoppingListQuantity: 1,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      const originalWidth = window.innerWidth;
+      window.innerWidth = 1024;
+      try {
+        const wrapper = await mountSuspended(ShoppingListView);
+        expect(store.hasCheckedSuggestionsSession).toBe(true);
+        const drawers = wrapper.findAllComponents({ name: "UDrawer" });
+        expect(drawers.length).toBeGreaterThan(0);
+      } finally {
+        window.innerWidth = originalWidth;
+      }
     });
   });
 });

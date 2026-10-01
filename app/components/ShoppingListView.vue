@@ -17,7 +17,7 @@ const toast = useToast();
 const isDesktop = useMediaQuery("(min-width: 640px)");
 const isDesktopSuggestionsOpen = ref(false);
 const isMobileSuggestionsOpen = ref(false);
-const mobileActiveSnapPoint = ref<number | string | null>(0.6);
+const isMobileFullScreen = ref(false);
 const removingSuggestionIds = ref<Set<string>>(new Set());
 
 const selectedCategory = ref<string | null>(null);
@@ -33,28 +33,20 @@ const displayedSuggestions = computed(() => {
   );
 });
 
-const isMobileFullScreen = computed(() => {
-  return (
-    mobileActiveSnapPoint.value === 1 ||
-    mobileActiveSnapPoint.value === "1" ||
-    mobileActiveSnapPoint.value === "100%"
-  );
-});
-
 function handleMobileListScroll(e: Event) {
   const el = e.target as HTMLElement;
   if (el.scrollTop > 10 && !isMobileFullScreen.value) {
-    mobileActiveSnapPoint.value = 1;
+    isMobileFullScreen.value = true;
   }
 }
 
 function closeMobileSuggestions() {
   isMobileSuggestionsOpen.value = false;
-  mobileActiveSnapPoint.value = 0.6;
+  isMobileFullScreen.value = false;
 }
 
 function openMobileSuggestionsDrawer() {
-  mobileActiveSnapPoint.value = 0.6;
+  isMobileFullScreen.value = false;
   isMobileSuggestionsOpen.value = true;
 }
 
@@ -77,10 +69,12 @@ async function handleAddSuggestion(item: PantryItem) {
     smoothScrollToItem(item.id);
   }
 
-  // On mobile, show toast with Undo
+  // On mobile, show single toast with Undo (clear stacking toasts)
   if (!isDesktop.value) {
+    toast.clear();
     toast.add({
-      title: "Item added to shopping list",
+      id: "suggestion-toast",
+      title: `${item.name} added to shopping list`,
       actions: [
         {
           label: "Undo",
@@ -98,48 +92,34 @@ async function handleAddSuggestion(item: PantryItem) {
   }, 1000);
 }
 
-// Session auto-open for mobile on first entry
-const SESSION_SUGGESTIONS_OPENED_KEY = "ps_mobile_suggestions_session_opened";
-let hasAutoOpenedThisSession = false;
-
-function tryAutoOpenMobileSuggestions() {
-  if (typeof window === "undefined") return;
-  if (isDesktop.value) return;
-  if (hasAutoOpenedThisSession) return;
-
-  try {
-    if (sessionStorage.getItem(SESSION_SUGGESTIONS_OPENED_KEY)) {
-      hasAutoOpenedThisSession = true;
-      return;
-    }
-  } catch {
-    // ignore storage errors
-  }
-
-  if (store.suggestions.length > 0) {
-    hasAutoOpenedThisSession = true;
-    try {
-      sessionStorage.setItem(SESSION_SUGGESTIONS_OPENED_KEY, "true");
-    } catch {
-      // ignore storage errors
-    }
-    mobileActiveSnapPoint.value = 0.6;
-    isMobileSuggestionsOpen.value = true;
-  }
-}
-
-onMounted(() => {
-  tryAutoOpenMobileSuggestions();
-});
-
+// On mobile, when suggestions list is empty, close the drawer
 watch(
-  () => store.suggestions.length,
+  () => displayedSuggestions.value.length,
   (count) => {
-    if (count > 0) {
-      tryAutoOpenMobileSuggestions();
+    if (!isDesktop.value && isMobileSuggestionsOpen.value && count === 0) {
+      setTimeout(() => {
+        if (!isDesktop.value && displayedSuggestions.value.length === 0 && isMobileSuggestionsOpen.value) {
+          closeMobileSuggestions();
+        }
+      }, 250);
     }
   }
 );
+
+// Session auto-open on first entry to screen (both desktop and mobile)
+onMounted(() => {
+  if (!store.hasCheckedSuggestionsSession) {
+    store.hasCheckedSuggestionsSession = true;
+    if (store.suggestions.length > 0) {
+      const isDesktopView = typeof window !== "undefined" ? window.innerWidth >= 640 : isDesktop.value;
+      if (isDesktopView) {
+        isDesktopSuggestionsOpen.value = true;
+      } else {
+        openMobileSuggestionsDrawer();
+      }
+    }
+  }
+});
 
 
 const filteredShoppingList = computed(() => {
@@ -421,8 +401,8 @@ async function handleUncheck(item: PantryItem) {
               class="w-48"
             />
             <UButton
-              :color="isDesktopSuggestionsOpen ? 'primary' : 'neutral'"
-              :variant="isDesktopSuggestionsOpen ? 'subtle' : 'outline'"
+              :color="isDesktopSuggestionsOpen ? 'secondary' : 'neutral'"
+              variant="soft"
               icon="i-lucide-lightbulb"
               size="md"
               aria-label="Suggestions"
@@ -623,37 +603,35 @@ async function handleUncheck(item: PantryItem) {
       </div>
     </div>
 
-    <!-- Mobile Floating "Suggestions" Button -->
+    <!-- Mobile Floating Action Bar (Centred Suggestions button + Right-aligned FAB) -->
     <div
       v-if="!isMobileSuggestionsOpen && !isMobileDrawerOpen"
-      class="sm:hidden fixed left-1/2 -translate-x-1/2 bottom-20 h-14 flex items-center z-30 pointer-events-none"
+      class="sm:hidden fixed bottom-20 left-0 right-0 h-14 flex items-center justify-center pointer-events-none z-30 px-4"
     >
+      <!-- Suggestions Button: Horizontal Centre Display, Vertically Centre Aligned to FAB -->
       <UButton
         color="neutral"
         variant="solid"
         size="lg"
         icon="i-lucide-lightbulb"
         label="Suggestions"
-        class="rounded-full shadow-lg pointer-events-auto px-5 py-2.5 font-semibold text-sm cursor-pointer"
+        class="rounded-full shadow-lg pointer-events-auto px-5 font-semibold text-sm cursor-pointer h-11"
         aria-label="Suggestions"
         @click="openMobileSuggestionsDrawer"
       />
-    </div>
 
-    <!-- Mobile Floating Action Button (FAB) -->
-    <div
-      v-if="!isMobileSuggestionsOpen && !isMobileDrawerOpen"
-      class="sm:hidden fixed right-4 bottom-20 z-30"
-    >
-      <UButton
-        color="primary"
-        variant="solid"
-        size="xl"
-        icon="i-lucide-plus"
-        class="rounded-full shadow-lg h-14 w-14 flex items-center justify-center p-0 cursor-pointer"
-        aria-label="Add Shopping Item"
-        @click="openMobileDrawer"
-      />
+      <!-- FAB: Right 4, Vertically Centred with Container -->
+      <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-auto">
+        <UButton
+          color="primary"
+          variant="solid"
+          size="xl"
+          icon="i-lucide-plus"
+          class="rounded-full shadow-lg h-14 w-14 flex items-center justify-center p-0 cursor-pointer"
+          aria-label="Add Shopping Item"
+          @click="openMobileDrawer"
+        />
+      </div>
     </div>
 
     <!-- Mobile Add Item Bottom Drawer (no handle, useFocus for input, reset on open) -->
@@ -777,39 +755,30 @@ async function handleUncheck(item: PantryItem) {
       </template>
     </UDrawer>
 
-    <!-- Mobile Suggestions Drawer (Bottom, Modal, Handle, Scroll to full screen, Title in view) -->
+    <!-- Mobile Suggestions Drawer (Bottom, Modal, Close button, No handle) -->
     <UDrawer
       v-else
       v-model:open="isMobileSuggestionsOpen"
-      v-model:active-snap-point="mobileActiveSnapPoint"
       direction="bottom"
-      :snap-points="[0.6, 1]"
-      :handle="true"
+      :handle="false"
       :modal="true"
+      :dismissible="false"
+      :close="true"
       title="Suggestions"
       :ui="{
-        content: 'flex flex-col h-full bg-default',
+        content: [
+          'flex flex-col bg-default transition-[height,max-height] duration-300 ease-out',
+          isMobileFullScreen ? 'h-full max-h-screen' : 'h-[70vh] max-h-[70vh]'
+        ],
         container: 'flex flex-col h-full overflow-hidden p-0',
         header: 'px-4 py-3 border-b border-default shrink-0 flex items-center justify-between bg-default',
         title: 'text-lg font-bold text-highlighted',
         body: 'flex-1 overflow-y-auto p-0'
       }"
-      @update:open="(val) => { if (!val) mobileActiveSnapPoint = 0.6; }"
+      @update:open="(val) => { if (!val) isMobileFullScreen = false; }"
     >
       <template #title>
         <span class="text-lg font-bold text-highlighted">Suggestions</span>
-      </template>
-
-      <template #actions>
-        <UButton
-          v-if="isMobileFullScreen"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-x"
-          size="md"
-          aria-label="Close"
-          @click="closeMobileSuggestions"
-        />
       </template>
 
       <template #body>

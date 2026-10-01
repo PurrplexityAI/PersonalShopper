@@ -68,20 +68,25 @@ describe("SuggestionListItem component", () => {
     expect(wrapper.emitted("add")?.[0][0]).toEqual(baseItem);
   });
 
-  it("renders item title and clicking it opens the edit modal", async () => {
+  it("renders item title without opening the edit modal", async () => {
     const wrapper = await mountSuspended(SuggestionListItem, {
       props: { suggestion: baseSuggestion },
     });
 
     const store = usePantryStore();
-    const titleBtn = wrapper.findAll("button").find((b) => b.text().includes("Almond Flour"));
-    expect(titleBtn).toBeDefined();
-    expect(titleBtn?.classes()).toContain("text-base");
-    expect(titleBtn?.classes()).toContain("font-semibold");
+    store.isItemModalOpen = false;
 
-    await titleBtn?.trigger("click");
-    expect(store.isItemModalOpen).toBe(true);
-    expect(store.editingItem?.id).toBe("sug-item-1");
+    // Title should be rendered with font-semibold and text-base
+    expect(wrapper.text()).toContain("Almond Flour");
+
+    // Title should not be a button that triggers openEditItemModal
+    const titleSpan = wrapper.find("span.font-semibold");
+    expect(titleSpan.exists()).toBe(true);
+    expect(titleSpan.text()).toBe("Almond Flour");
+
+    // Triggering click on title does not open edit modal
+    await titleSpan.trigger("click");
+    expect(store.isItemModalOpen).toBe(false);
   });
 
   it("renders category, reason, and notes", async () => {

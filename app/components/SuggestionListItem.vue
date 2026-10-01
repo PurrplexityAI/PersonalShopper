@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { usePantryStore } from "~~/app/stores/pantry";
 import type { PantryItem, ShoppingSuggestion } from "~~/shared/types";
 
 interface Props {
@@ -13,8 +12,6 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: "add", item: PantryItem): void;
 }>();
-
-const store = usePantryStore();
 
 const item = computed<PantryItem>(() => {
   return props.suggestion?.item || props.item!;
@@ -47,13 +44,9 @@ function handleAdd(e: Event) {
 
       <!-- Title, Category and reason/cadence -->
       <div class="min-w-0 flex-1 flex flex-col gap-0.5">
-        <button
-          type="button"
-          class="font-semibold text-highlighted text-base hover:text-primary transition-colors cursor-pointer text-left block truncate"
-          @click="store.openEditItemModal(item)"
-        >
+        <span class="font-semibold text-highlighted text-base block truncate">
           {{ item.name }}
-        </button>
+        </span>
 
         <p class="text-sm text-muted break-words flex items-center gap-1.5 flex-wrap">
           <span>{{ item.category }}</span>
