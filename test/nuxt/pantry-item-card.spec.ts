@@ -18,7 +18,7 @@ describe("PantryItemCard component", () => {
     lastSuggestedAt: null,
     lastPurchasedAt: "2026-09-20T12:00:00.000Z",
     lastPurchasedAtPrevious: null,
-    nextDueDate: "2026-10-15T12:00:00.000Z", // In future -> In stock
+    nextDueDate: "2099-01-01T12:00:00.000Z", // In future -> In stock
     inShoppingList: false,
     shoppingListQuantity: 1,
     notes: "Keep refrigerated once opened",
