@@ -8,3 +8,6 @@
 .env.*
 !.env.example
 .wrangler
+/test-results
+/playwright-report
+/docs/assets/recordings

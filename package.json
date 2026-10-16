@@ -15,6 +15,9 @@
     "preview": "nuxt preview",
     "deploy": "wrangler deploy",
     "test": "nuxt test",
+    "test:unit": "nuxt test --project nuxt",
+    "test:e2e": "nuxt test --project e2e",
+    "showcase:generate": "node scripts/generate-showcase.mjs",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck"
   },
@@ -29,11 +32,13 @@
   "devDependencies": {
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/test-utils": "^4.3.2",
+    "@playwright/test": "^1.64.1",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.20.2",
     "@vue/test-utils": "^2.5.1",
     "@vueuse/nuxt": "^15.0.0",
     "eslint": "^10.11.0",
+    "ffmpeg-static": "^5.3.0",
     "happy-dom": "^20.14.5",
     "prisma": "^8.0.0-rc.17",
     "tailwindcss": "^4.3.3",

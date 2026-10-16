@@ -1,8 +1,17 @@
 # Personal Shopper
 
-> A smart pantry inventory and cadence-driven shopping list web application built with Nuxt 4, Prisma 8, and Cloudflare Workers.
+> A smart pantry inventory and cadence-driven shopping list web application built with Nuxt 4, Prisma 8, and deployed to  Cloudflare Workers.
 
 Personal Shopper helps households track pantry staples, monitor stock levels, and predict replenishment needs with smart, frequency-based shopping suggestions.
+
+## 📱 Mobile Showcase & Key Interactions
+
+Below are live captures of key interactions running on mobile emulation:
+
+| 1. Smart Frequency Learning | 2. Pantry Filter & Search | 3. Checklist & Trip History |
+| :---: | :---: | :---: |
+| ![Smart Frequency Anomaly Prompt](docs/assets/demo/anomaly-prompt.gif) | ![Pantry Filter and Search](docs/assets/demo/pantry-filter.gif) | ![Checking and Unchecking Shopping Items](docs/assets/demo/shopping-toggle.gif) |
+| **Adaptive Cadence Prompt**<br>Adding an item earlier than planned triggers anomaly detection, allowing one-tap frequency learning. | **Instant Mobile Search**<br>Instant filtering across pantry inventory and categories with the illuminated mobile search action. | **One-Tap Checkoff & History**<br>Purchased items trigger celebration confetti and organize into collapsible session history. |
 
 ## Features
 
@@ -101,13 +110,26 @@ npm run dev
 
 ### Running Automated Tests
 
-Run the isolated Vitest test suite verifying cadence math, frequency algorithms, component interactions, and Pinia store state transitions:
+Run the complete test suite (unit + E2E browser tests):
 
 ```bash
 npm test
 ```
 
-> **Note**: Automated tests run against an in-memory mocked Prisma client context, ensuring unit tests execute instantly and deterministically without requiring an active database connection.
+You can also run specific test suites individually:
+
+- **Unit & Component Suite (Vitest)**: Verifies cadence math, frequency algorithms, component interactions, and Pinia store state transitions against an in-memory mocked context:
+  ```bash
+  npm run test:unit
+  ```
+- **End-to-End Mobile Suite (Vitest + Playwright)**: Verifies live mobile browser flows, user interactions, and UI reactivity using `@nuxt/test-utils/e2e`:
+  ```bash
+  npm run test:e2e
+  ```
+- **Regenerate Showcase GIFs**: Re-records the key interaction flows on mobile emulation and compiles high-quality, palette-optimized GIFs for the documentation:
+  ```bash
+  npm run showcase:generate
+  ```
 
 ### Code Quality & Type Checking
 
