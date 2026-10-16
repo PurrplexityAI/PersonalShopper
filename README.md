@@ -90,13 +90,34 @@ Configure your PostgreSQL connection strings in `.env`:
 - `NUXT_DATABASE_URL`: Connection pooler URL (e.g. Supabase transaction pooler on port 6543) used by runtime API endpoints.
 - `NUXT_DIRECT_URL`: Direct PostgreSQL connection (port 5432) used by Prisma 8 CLI for contracts and migrations.
 
-### Database Contract & Migrations
+### Database Setup & Migrations
 
-Emit Prisma contracts and apply migrations:
+Once your `.env` connection strings are configured, apply the committed Prisma 8 migrations to provision your database tables:
 
 ```bash
-npx prisma contract emit
+npx prisma db migrate
 ```
+
+To verify that your database schema and contract marker are in sync:
+
+```bash
+npx prisma db verify
+```
+
+#### Modifying the Schema (Development)
+
+If you modify the data model in `prisma/contract.prisma`:
+
+1. **Emit contract artifacts** (re-generates TypeScript types and contract JSON):
+   ```bash
+   npx prisma contract emit
+   ```
+2. **Plan and apply a new migration**:
+   ```bash
+   npx prisma migration plan --name <migration_name>
+   npx prisma db migrate
+   ```
+   *(For rapid local prototyping without committing migration packages, use `npx prisma db update`).*
 
 ### Development Mode
 
