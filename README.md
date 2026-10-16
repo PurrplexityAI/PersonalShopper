@@ -4,8 +4,6 @@
 
 Personal Shopper helps households track pantry staples, monitor stock levels, and predict replenishment needs with smart, frequency-based shopping suggestions.
 
----
-
 ## Features
 
 - **Cadence-Driven Suggestions**: Set replenishment cycles (daily, weekly, bi-weekly, monthly, or custom intervals). Personal Shopper automatically calculates when items are due or overdue.
@@ -18,8 +16,6 @@ Personal Shopper helps households track pantry staples, monitor stock levels, an
 - **Full Pantry Management**: Categorize items, record custom units, specify quantities, and append item notes.
 - **Responsive & Mobile Ready**: Single Page Application (SPA mode) optimized for mobile touch devices and prepared for Capacitor mobile compilation.
 
----
-
 ## Tech Stack
 
 - **Framework**: [Nuxt 4.5.1](https://nuxt.com/) (configured in SPA mode with Nitro engine)
@@ -29,7 +25,6 @@ Personal Shopper helps households track pantry staples, monitor stock levels, an
 - **Edge Deployment**: [Cloudflare Workers](https://workers.cloudflare.com/) via [Wrangler](https://developers.cloudflare.com/workers/wrangler/) with request-scoped DB pooling (`ctx.waitUntil(db.close())`)
 - **Testing & Verification**: [Vitest](https://vitest.dev/) & [@nuxt/test-utils](https://nuxt.com/docs/getting-started/testing) with mocked Prisma client isolation, ESLint 10, and TypeScript 6
 
----
 
 ## Project Structure
 
@@ -56,8 +51,6 @@ PersonalShopper/
 ├── vitest.config.ts       # Vitest configuration for Nuxt runtime environment
 └── wrangler.json          # Cloudflare Workers deployment configuration
 ```
-
----
 
 ## Getting Started
 
@@ -139,7 +132,10 @@ Deploy to Cloudflare Workers via Wrangler:
 npm run deploy
 ```
 
----
+
+## Roadmap
+
+For upcoming features, UX improvements, architectural refactoring, and known technical trade-offs, see [ROADMAP.md](ROADMAP.md).
 
 ## Copyright & License
 
