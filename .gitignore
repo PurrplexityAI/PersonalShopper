@@ -1,6 +1,5 @@
 /node_modules
 /dist
-/data
 .nuxt
 .output
 .nuxtrc
@@ -8,6 +7,4 @@
 .env.*
 !.env.example
 .wrangler
-/test-results
-/playwright-report
-/docs/assets/recordings
+/docs/assets/recordings
