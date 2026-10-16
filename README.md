@@ -151,7 +151,11 @@ npm run build
 Deploy to Cloudflare Workers via Wrangler:
 
 ```bash
-npm run deploy
+# Deploy to development / workers.dev environment:
+npm run deploy:dev
+
+# Deploy to production custom domain:
+npm run deploy:prod
 ```
 
 
