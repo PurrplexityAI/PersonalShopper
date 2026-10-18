@@ -12,8 +12,6 @@ import { calculateBurnRatio } from "~~/app/utils/frequency";
 import { soundEffects } from "~~/app/utils/audio";
 import { fireShoppingConfetti } from "~~/app/utils/confetti";
 
-const STORAGE_KEY = "personal_shopper_pantry_v1";
-
 function getErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
@@ -28,6 +26,7 @@ export const usePantryStore = defineStore("pantry", {
     stockFilter: "all" as StockFilter,
     isLoading: true,
     isRefreshing: false,
+    loadError: null as string | null,
     sessionPurchased: [] as Array<{ id: string; name: string; timestamp: string; previousLastPurchasedAt?: string | null }>,
     isItemModalOpen: false,
     editingItem: null as PantryItem | null,
@@ -104,6 +103,7 @@ export const usePantryStore = defineStore("pantry", {
       // Only error toasts are enabled per specification
       if (color !== "error") return;
       try {
+        console.error(`[App Error] ${title}:`, description || "");
         const nuxtApp = useNuxtApp();
         if (nuxtApp?.runWithContext) {
           nuxtApp.runWithContext(() => {
@@ -131,6 +131,16 @@ export const usePantryStore = defineStore("pantry", {
 
     async loadData(isSilent = false) {
       if (!isSilent) this.isRefreshing = true;
+
+      // Purge any legacy localStorage cache if present
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("personal_shopper_pantry_v1");
+        } catch {
+          // ignore
+        }
+      }
+
       try {
         const [pantryRes, catRes] = await Promise.all([
           $fetch<{ success: boolean; data: PantryItem[] }>("/api/pantry"),
@@ -139,48 +149,15 @@ export const usePantryStore = defineStore("pantry", {
 
         if (pantryRes && pantryRes.data) {
           this.items = pantryRes.data;
-          // Sync to localStorage for offline / Capacitor readiness
-          if (typeof window !== "undefined") {
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(this.items));
-            } catch {
-              // ignore storage errors
-            }
-          }
+          this.loadError = null;
         }
         if (catRes && catRes.data) {
           this.categories = catRes.data;
         }
       } catch (err) {
-        // Fallback to localStorage if offline or in Capacitor without backend
-        if (typeof window !== "undefined") {
-          const cached = localStorage.getItem(STORAGE_KEY);
-          if (cached) {
-            try {
-              this.items = JSON.parse(cached);
-              const defaultCategories = [
-                "Dairy & Eggs",
-                "Produce",
-                "Bakery",
-                "Meat & Seafood",
-                "Pantry Staples",
-                "Beverages",
-                "Snacks",
-                "Condiments & Spices",
-                "Frozen",
-                "Household",
-                "Personal Care",
-                "General",
-              ];
-              const itemCats = this.items.map((i) => i.category);
-              this.categories = Array.from(new Set([...defaultCategories, ...itemCats])).filter(Boolean).sort();
-              return;
-            } catch {
-              // ignore
-            }
-          }
-        }
-        this.notify("Error connecting to pantry server", getErrorMessage(err), "error");
+        const errMsg = getErrorMessage(err);
+        this.loadError = errMsg;
+        this.notify("Error connecting to pantry server", errMsg, "error");
       } finally {
         this.isLoading = false;
         this.isRefreshing = false;

@@ -27,6 +27,25 @@ onMounted(() => {
           <p class="font-medium">Loading your pantry & shopping list...</p>
         </div>
 
+        <div v-else-if="store.loadError && !store.items.length" class="max-w-md mx-auto py-16 px-4 text-center space-y-4">
+          <UAlert
+            color="error"
+            variant="subtle"
+            icon="i-lucide-alert-triangle"
+            title="Failed to load pantry data"
+            :description="store.loadError"
+          />
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-refresh-cw"
+            :loading="store.isRefreshing"
+            @click="store.loadData()"
+          >
+            Retry Connection
+          </UButton>
+        </div>
+
         <template v-else>
           <ShoppingListView v-if="store.activeTab === 'shopping'" />
           <PantryView v-else-if="store.activeTab === 'pantry'" />
